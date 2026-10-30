@@ -1,4 +1,5 @@
 import AppKit
+import ServiceManagement
 
 /// Checks GitHub Releases for a newer version, shows the changelog, and installs the update.
 @MainActor
@@ -203,7 +204,12 @@ final class UpdateChecker {
         do {
             let stagedApp = try await work.value
             window.close()
-            try launchReplacer(stagedApp: stagedApp, target: bundleURL)
+            // A release may ship under a new app name; install it next to this one and retire this one.
+            let destination = bundleURL.deletingLastPathComponent().appendingPathComponent(stagedApp.lastPathComponent)
+            if destination.standardizedFileURL != bundleURL.standardizedFileURL {
+                handOffLoginItem()
+            }
+            try launchReplacer(stagedApp: stagedApp, destination: destination, current: bundleURL)
             NSApp.terminate(nil)
         } catch {
             window.close()
@@ -235,7 +241,16 @@ final class UpdateChecker {
         return window
     }
 
-    /// Downloads the DMG, copies LyricBar.app out of it, and unmounts. Returns the staged app.
+    /// Remembers whether this app launched at login, for the renamed app to pick up, and removes
+    /// this app's login item since the bundle is about to be deleted.
+    private func handOffLoginItem() {
+        let enabled = SMAppService.mainApp.status == .enabled
+        UserDefaults.standard.set(enabled, forKey: "migratedLaunchAtLogin")
+        UserDefaults.standard.synchronize()
+        if enabled { try? SMAppService.mainApp.unregister() }
+    }
+
+    /// Downloads the DMG, copies the app out of it, and unmounts. Returns the staged app.
     private nonisolated static func downloadAndStage(_ dmgURL: URL) async throws -> URL {
         let fm = FileManager.default
         let workDir = fm.temporaryDirectory.appendingPathComponent("LyricBarUpdate-\(UUID().uuidString)")
@@ -253,11 +268,12 @@ final class UpdateChecker {
         try run("/usr/bin/hdiutil", ["attach", dmg.path, "-nobrowse", "-readonly", "-noautoopen", "-mountpoint", mount.path])
         defer { _ = try? run("/usr/bin/hdiutil", ["detach", mount.path, "-force"]) }
 
-        let source = mount.appendingPathComponent("LyricBar.app")
-        guard fm.fileExists(atPath: source.path) else {
-            throw InstallError("The update package doesn't contain LyricBar.app.")
+        let apps = (try? fm.contentsOfDirectory(at: mount, includingPropertiesForKeys: nil))?
+            .filter { $0.pathExtension == "app" } ?? []
+        guard let source = apps.first else {
+            throw InstallError("The update package doesn't contain an app.")
         }
-        let staged = workDir.appendingPathComponent("LyricBar.app")
+        let staged = workDir.appendingPathComponent(source.lastPathComponent)
         try run("/usr/bin/ditto", [source.path, staged.path])
         return staged
     }
@@ -279,17 +295,19 @@ final class UpdateChecker {
         return output
     }
 
-    /// Starts a detached shell that waits for this process to exit, swaps the bundle, and relaunches.
-    private func launchReplacer(stagedApp: URL, target: URL) throws {
+    /// Starts a detached shell that waits for this process to exit, installs the staged bundle at
+    /// `destination`, removes `current` if the app was renamed, and launches the new one.
+    private func launchReplacer(stagedApp: URL, destination: URL, current: URL) throws {
         let script = """
         while kill -0 \(ProcessInfo.processInfo.processIdentifier) 2>/dev/null; do sleep 0.2; done
-        rm -rf "$2" && /usr/bin/ditto "$1" "$2" && /usr/bin/xattr -dr com.apple.quarantine "$2"
+        rm -rf "$2" && /usr/bin/ditto "$1" "$2" && /usr/bin/xattr -dr com.apple.quarantine "$2" || exit 1
+        [ "$3" != "$2" ] && rm -rf "$3"
         /usr/bin/open "$2"
         rm -rf "$(dirname "$1")"
         """
         let process = Process()
         process.executableURL = URL(fileURLWithPath: "/bin/sh")
-        process.arguments = ["-c", script, "sh", stagedApp.path, target.path]
+        process.arguments = ["-c", script, "sh", stagedApp.path, destination.path, current.path]
         process.standardOutput = FileHandle.nullDevice
         process.standardError = FileHandle.nullDevice
         try process.run()
