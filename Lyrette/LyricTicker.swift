@@ -977,8 +977,20 @@ final class LyricTicker: ObservableObject {
 
     // MARK: - Playback Controls
     func togglePlayPause() {
-        guard let source = lastActiveSource else { return }
-        DispatchQueue.global(qos: .userInitiated).async {
+        guard let source = lastActiveSource, playbackState != .idle else { return }
+
+        // Flip the UI right away instead of waiting for the next poll (up to 5 s while paused).
+        // A poll already in flight would report the old state, so its result is dropped.
+        pollGate.invalidate()
+        anchorPosition = currentPosition()
+        anchorDate = Date()
+        let willPlay = playbackState != .playing
+        playbackState = willPlay ? .playing : .paused
+        isPlaying = willPlay
+        if willPlay { startLineTimer() } else { stopLineTimer() }
+        setPollingTimer(activePollInterval)
+
+        sendCommand {
             switch source {
             case .music: playPauseMusic()
             case .spotify: playPauseSpotify()
@@ -988,7 +1000,7 @@ final class LyricTicker: ObservableObject {
 
     func nextTrack() {
         guard let source = lastActiveSource else { return }
-        DispatchQueue.global(qos: .userInitiated).async {
+        sendCommand {
             switch source {
             case .music: nextTrackMusic()
             case .spotify: nextTrackSpotify()
@@ -998,11 +1010,20 @@ final class LyricTicker: ObservableObject {
 
     func previousTrack() {
         guard let source = lastActiveSource else { return }
-        DispatchQueue.global(qos: .userInitiated).async {
+        sendCommand {
             switch source {
             case .music: previousTrackMusic()
             case .spotify: previousTrackSpotify()
             }
+        }
+    }
+
+    /// Runs a player command off the main thread, then polls at once so the result shows
+    /// without waiting for the regular timer.
+    private func sendCommand(_ command: @escaping @Sendable () -> Void) {
+        DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+            command()
+            DispatchQueue.main.async { self?.pollNowPlaying() }
         }
     }
 
