@@ -142,14 +142,13 @@ nonisolated enum LyricRomanizer {
 
 /// What the menu bar shows for the current line.
 enum MenuBarLyricStyle: String, CaseIterable, Identifiable {
-    case original, romanized, translated
+    case original, romanized
     var id: String { rawValue }
 
     var title: String {
         switch self {
         case .original: return "Original"
         case .romanized: return "Romanization"
-        case .translated: return "Translation"
         }
     }
 }

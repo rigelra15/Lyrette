@@ -665,7 +665,6 @@ final class LyricTicker: ObservableObject {
     @Published var menuBarLyricStyle = MenuBarLyricStyle(rawValue: UserDefaults.standard.string(forKey: "menuBarLyricStyle") ?? "") ?? .original {
         didSet {
             UserDefaults.standard.set(menuBarLyricStyle.rawValue, forKey: "menuBarLyricStyle")
-            refreshTranslation()
         }
     }
     @Published var translationTarget = UserDefaults.standard.string(forKey: "translationTarget") ?? TranslationTargets.systemDefault {
@@ -678,13 +677,12 @@ final class LyricTicker: ObservableObject {
 
     private var translationTask: Task<Void, Never>?
 
-    /// The current line as the menu bar should show it: original, romanized or translated.
+    /// The current line as the menu bar should show it: original or romanized.
     var displayedCurrentLine: String {
         guard let id = currentLineID else { return current }
         switch menuBarLyricStyle {
         case .original: return current
         case .romanized: return romanizedLines[id] ?? current
-        case .translated: return translatedLines[id] ?? current
         }
     }
 
@@ -702,7 +700,7 @@ final class LyricTicker: ObservableObject {
     func refreshTranslation() {
         if translationState == .downloading { return }
         translationTask?.cancel()
-        guard showTranslation || menuBarLyricStyle == .translated else {
+        guard showTranslation else {
             translationState = .off
             return
         }
