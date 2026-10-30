@@ -154,6 +154,22 @@ struct FullLyricsView: View {
                 .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(.white.opacity(0.7))
                 .multilineTextAlignment(.center)
+
+            if !ticker.isFetching, ticker.hasNowPlaying {
+                Button {
+                    ticker.retryLyrics()
+                } label: {
+                    Label("Try Again", systemImage: "arrow.clockwise")
+                        .font(.system(size: 12, weight: .semibold))
+                        .padding(.horizontal, 14)
+                        .padding(.vertical, 7)
+                        .background(.white.opacity(0.16), in: Capsule())
+                        .foregroundStyle(.white)
+                }
+                .buttonStyle(.plain)
+                .help("Search every lyrics source again")
+                .padding(.top, 4)
+            }
         }
         .frame(maxWidth: .infinity)
         .padding(.top, 140)

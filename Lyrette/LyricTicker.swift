@@ -876,8 +876,10 @@ final class LyricTicker: ObservableObject {
         } catch {
             guard !Task.isCancelled else { return }
             NSLog("Lyrette: fetch error: \(error)")
+            let unavailable = (error as? LyricsSourceError) == .unavailable
             await MainActor.run {
                 guard self.currentSongKey == songKey else { return }
+                if unavailable { self.scheduleLyricsRetry(for: songKey) }
                 self.rawLRC = ""
                 self.lyricsProviderName = ""
                 self.syncLines = []
@@ -1025,6 +1027,30 @@ final class LyricTicker: ObservableObject {
             command()
             DispatchQueue.main.async { self?.pollNowPlaying() }
         }
+    }
+
+    // MARK: - Lyrics retry
+
+    private var lyricsRetryCounts: [String: Int] = [:]
+
+    /// A source was unreachable rather than empty, so try again shortly (a few times per song).
+    private func scheduleLyricsRetry(for songKey: String) {
+        let attempts = lyricsRetryCounts[songKey, default: 0]
+        guard attempts < 3 else { return }
+        lyricsRetryCounts[songKey] = attempts + 1
+        DispatchQueue.main.asyncAfter(deadline: .now() + Double(10 * (attempts + 1))) { [weak self] in
+            guard let self, self.currentSongKey == songKey, self.syncLines.isEmpty, !self.isFetching else { return }
+            self.retryLyrics()
+        }
+    }
+
+    /// Forgets that the current song had no lyrics and fetches it again from the network.
+    func retryLyrics() {
+        guard hasNowPlaying else { return }
+        missingLyricsKeys.remove(cacheKey(artist: nowPlayingArtist, title: nowPlayingTitle))
+        fetchTask?.cancel()
+        currentSongKey = ""
+        pollNowPlaying()
     }
 
     // MARK: - Seek

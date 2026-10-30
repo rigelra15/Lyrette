@@ -9,7 +9,12 @@ nonisolated struct LyricsQuery: Sendable {
     let duration: TimeInterval
 }
 
-nonisolated enum LyricsSourceError: Error { case notFound }
+nonisolated enum LyricsSourceError: Error {
+    /// Every source answered and none has synced lyrics for the song.
+    case notFound
+    /// At least one source couldn't be reached (timeout, HTTP 5xx…), so the answer isn't final.
+    case unavailable
+}
 
 /// Which backend(s) to ask. `auto` walks the whole chain; the others use exactly one provider.
 nonisolated enum LyricsSourcePreference: String, CaseIterable, Identifiable, Sendable {
@@ -390,15 +395,27 @@ nonisolated final class LyricsSource: Sendable {
     func fetchSyncedLyrics(for query: LyricsQuery, preference: LyricsSourcePreference = .auto) async throws -> LyricsResult {
         let preferred = providers.filter { $0.name == preference.providerName }
         let candidates = preferred + providers.filter { $0.name != preference.providerName }
+        var anyUnavailable = false
         for provider in candidates {
-            do {
-                let lrc = try await provider.fetchSyncedLRC(for: query, session: session)
-                if LyricsMatching.looksLikeLRC(lrc) { return LyricsResult(lrc: lrc, provider: provider.name) }
-            } catch {
-                if Task.isCancelled { throw CancellationError() }
-                NSLog("Lyrette: \(provider.name) had no lyrics: \(error)")
+            // Sources like LRCLIB answer 503 now and then; one quick retry usually gets through.
+            for attempt in 0..<2 {
+                do {
+                    let lrc = try await provider.fetchSyncedLRC(for: query, session: session)
+                    if LyricsMatching.looksLikeLRC(lrc) { return LyricsResult(lrc: lrc, provider: provider.name) }
+                    break
+                } catch LyricsSourceError.notFound {
+                    break
+                } catch {
+                    if Task.isCancelled { throw CancellationError() }
+                    NSLog("Lyrette: \(provider.name) failed (attempt \(attempt + 1)): \(error)")
+                    if attempt == 0 {
+                        try await Task.sleep(nanoseconds: 600_000_000)
+                    } else {
+                        anyUnavailable = true
+                    }
+                }
             }
         }
-        throw LyricsSourceError.notFound
+        throw anyUnavailable ? LyricsSourceError.unavailable : LyricsSourceError.notFound
     }
 }
