@@ -50,12 +50,12 @@ What's in the popover:
 | Control | What it does |
 |---------|--------------|
 | **Song card** | Cover, title, artist and which player it's coming from |
-| **Lyrics source** (`Auto · LRCLIB`) | Pick LRCLIB, NetEase or BetterLyrics, or *Auto* to try them in order |
-| **Timing** `−` `0.00s` `+` | Nudge the lyrics earlier or later if they're slightly off; the arrow resets it. Saved per song |
+| **Lyrics source** (`Auto · LRCLIB`) | Pick LRCLIB, NetEase or BetterLyrics, or *Auto* to try them in order. If your pick has nothing for a song, LyricBar falls back to the others and shows it, e.g. `NetEase → LRCLIB` |
+| **Timing** `−` `0.00s` `+` | `+` moves the lyrics ahead (lines show sooner), `−` holds them back; the arrow resets it. Saved per song |
 | **Progress bar** | Shows the position in the track |
 | **⏮ ⏯ ⏭** | Previous, play/pause and next |
 | **Show Full Lyrics** | Opens the scrolling lyrics view; use **‹** to go back. Click a line to jump to it |
-| **Music / Spotify** | Green dot and *Allowed* mean Automation access is granted |
+| **Music / Spotify** | *Connected* means LyricBar can read that player; otherwise click **Allow Access** |
 | **Launch at Login** | Start LyricBar automatically when you sign in |
 | ↻ **Clear cache** · ⬇︎ **Check for updates** · ⓘ **About** · ⏻ **Quit** | Footer buttons |
 
@@ -159,7 +159,7 @@ No accounts, API keys or sign-in are needed. LyricBar is **not sandboxed** and d
 
 LyricBar reads the current track through AppleScript, so macOS asks once per player: *"LyricBar wants to control Music"* (and the same for Spotify). Click **OK**.
 
-Missed it or clicked *Don't Allow*? Open **System Settings → Privacy & Security → Automation**, expand **LyricBar** and switch **Music** / **Spotify** on. The popover shows a checkmark once access is granted.
+Missed it or clicked *Don't Allow*? Open **System Settings → Privacy & Security → Automation**, expand **LyricBar** and switch **Music** / **Spotify** on. The popover shows *Connected* next to each player once access is granted.
 
 ## How it works
 

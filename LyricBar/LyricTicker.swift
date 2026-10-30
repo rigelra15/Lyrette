@@ -555,11 +555,14 @@ final class LyricTicker: ObservableObject {
     private(set) var lyricGaps: [LyricGap] = []
     private var gapsByIndex: [Int: LyricGap] = [:]
 
-    private static let offsetsKey = "lyricsOffsets"
+    /// A positive offset moves the lyrics ahead (each line shows sooner); negative holds them back.
+    /// Offsets saved by older versions used the opposite sign under "lyricsOffsets" and are migrated.
+    private static let offsetsKey = "lyricsOffsetsV2"
+    private static let legacyOffsetsKey = "lyricsOffsets"
 
-    /// Position the lyrics should be drawn at: playback position minus the user's timing offset.
+    /// Position the lyrics should be drawn at: playback position plus the user's timing offset.
     func lyricPosition(at date: Date = Date()) -> TimeInterval {
-        currentPosition(at: date) - lyricsOffset
+        currentPosition(at: date) + lyricsOffset
     }
 
     func adjustLyricsOffset(by delta: TimeInterval) {
@@ -583,7 +586,17 @@ final class LyricTicker: ObservableObject {
     }
 
     private static func storedOffset(for songKey: String) -> TimeInterval {
-        (UserDefaults.standard.dictionary(forKey: offsetsKey) as? [String: Double])?[songKey] ?? 0
+        migrateLegacyOffsets()
+        return (UserDefaults.standard.dictionary(forKey: offsetsKey) as? [String: Double])?[songKey] ?? 0
+    }
+
+    private static func migrateLegacyOffsets() {
+        let defaults = UserDefaults.standard
+        guard let legacy = defaults.dictionary(forKey: legacyOffsetsKey) as? [String: Double] else { return }
+        var current = defaults.dictionary(forKey: offsetsKey) as? [String: Double] ?? [:]
+        for (key, value) in legacy where current[key] == nil { current[key] = -value }
+        defaults.set(current, forKey: offsetsKey)
+        defaults.removeObject(forKey: legacyOffsetsKey)
     }
     @Published private(set) var lyricsSourcePreference: LyricsSourcePreference = .load()
 
@@ -920,10 +933,10 @@ final class LyricTicker: ObservableObject {
     }
 
     // MARK: Sync update
-    /// `rawElapsed` is the playback position; the user's offset is applied here.
+    /// `rawElapsed` is the playback position; the user's offset is added here.
     private func updateCurrentLine(elapsed rawElapsed: TimeInterval) {
         guard !syncLines.isEmpty else { return }
-        let elapsed = rawElapsed - lyricsOffset
+        let elapsed = rawElapsed + lyricsOffset
 
         if let intro = gapsByIndex[-1], elapsed < intro.end {
             enterGap(intro, elapsed: elapsed)

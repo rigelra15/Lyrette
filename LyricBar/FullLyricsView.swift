@@ -93,8 +93,8 @@ struct FullLyricsView: View {
                                 font: lineFont,
                                 ticker: ticker
                             ) {
-                                // Seek so the lyric position (playback minus offset) lands on this line.
-                                ticker.seek(to: line.time + ticker.lyricsOffset)
+                                // Seek so the lyric position (playback plus offset) lands on this line.
+                                ticker.seek(to: line.time - ticker.lyricsOffset)
                             }
                             .id(line.id)
 
@@ -445,8 +445,13 @@ struct LyricsSourceMenu: View {
 
     private var label: String {
         let preference = ticker.lyricsSourcePreference
-        if preference == .auto, !ticker.lyricsProviderName.isEmpty {
-            return "Auto · \(ticker.lyricsProviderName)"
+        let provider = ticker.lyricsProviderName
+        if preference == .auto, !provider.isEmpty {
+            return "Auto · \(provider)"
+        }
+        // The chosen source had nothing for this song, so another one filled in.
+        if !provider.isEmpty, provider != preference.displayName {
+            return "\(preference.displayName) → \(provider)"
         }
         return preference.displayName
     }
@@ -579,13 +584,13 @@ struct LyricsOffsetControl: View {
 
             if showsLabel { Spacer(minLength: 0) }
 
-            stepButton("minus", help: "Show lyrics earlier") { ticker.adjustLyricsOffset(by: -step) }
+            stepButton("minus", help: "Show lyrics later") { ticker.adjustLyricsOffset(by: -step) }
 
             Text(offsetText)
                 .font(.system(size: 11, weight: .medium).monospacedDigit())
                 .frame(minWidth: 46)
 
-            stepButton("plus", help: "Show lyrics later") { ticker.adjustLyricsOffset(by: step) }
+            stepButton("plus", help: "Show lyrics earlier") { ticker.adjustLyricsOffset(by: step) }
 
             stepButton("arrow.counterclockwise", help: "Reset timing") { ticker.resetLyricsOffset() }
                 .disabled(ticker.lyricsOffset == 0)

@@ -333,19 +333,12 @@ final class LyricBarStatusItem: NSObject, ObservableObject, NSPopoverDelegate {
             popover.performClose(nil)
         } else {
             popover.contentSize = Self.popoverSize
-            // The width stays fixed while the popover is open (it's anchored to this item), so
-            // open it at full width: long lines then have room instead of scrolling in a small box.
-            setStatusWidth(Self.maxStatusWidth)
-            // Give the status item a beat to take its new frame so the popover centers on it.
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) { [weak self] in
-                guard let self else { return }
-                self.popover.show(
-                    relativeTo: self.statusView.bounds,
-                    of: self.statusView,
-                    preferredEdge: .minY
-                )
-                NSApp.activate(ignoringOtherApps: true)
-            }
+            popover.show(
+                relativeTo: statusView.bounds,
+                of: statusView,
+                preferredEdge: .minY
+            )
+            NSApp.activate(ignoringOtherApps: true)
         }
     }
 }

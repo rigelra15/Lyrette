@@ -213,27 +213,24 @@ struct LyricBarMenuView: View {
     // MARK: Connections
 
     private var connectionsRow: some View {
-        HStack(spacing: 8) {
-            ConnectionChip(
-                title: "Music",
-                detail: ticker.musicAccessOK ? "Allowed" : "Allow access",
-                systemImage: "music.note",
-                isConnected: ticker.musicAccessOK,
-                tint: accentColor
+        VStack(spacing: 0) {
+            PlayerAccessRow(
+                name: "Music",
+                bundleID: "com.apple.Music",
+                isAllowed: ticker.musicAccessOK
             ) {
                 ticker.requestAutomationAccess(app: .music)
             }
-
-            ConnectionChip(
-                title: "Spotify",
-                detail: ticker.spotifyAccessOK ? "Allowed" : "Allow access",
-                systemImage: "waveform",
-                isConnected: ticker.spotifyAccessOK,
-                tint: accentColor
+            Divider().padding(.leading, 40)
+            PlayerAccessRow(
+                name: "Spotify",
+                bundleID: "com.spotify.client",
+                isAllowed: ticker.spotifyAccessOK
             ) {
                 ticker.requestAutomationAccess(app: .spotify)
             }
         }
+        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
     }
 
     // MARK: Footer
@@ -317,47 +314,59 @@ struct AlbumArtworkView: View {
     }
 }
 
-private struct ConnectionChip: View {
-    let title: String
-    let detail: String
-    let systemImage: String
-    let isConnected: Bool
-    let tint: Color
-    var action: (() -> Void)?
+/// One player in the access list: its real app icon, name, and whether LyricBar may read it.
+private struct PlayerAccessRow: View {
+    let name: String
+    let bundleID: String
+    let isAllowed: Bool
+    let requestAccess: () -> Void
+
+    private var appURL: URL? {
+        NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleID)
+    }
 
     var body: some View {
-        let content = VStack(spacing: 4) {
-            ZStack(alignment: .topTrailing) {
-                Image(systemName: systemImage)
-                    .font(.system(size: 14, weight: .semibold))
-                    .foregroundStyle(isConnected ? tint : .secondary)
-                    .frame(width: 30, height: 30)
-                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
-
-                Circle()
-                    .fill(isConnected ? Color.green : Color.secondary.opacity(0.5))
-                    .frame(width: 7, height: 7)
-                    .offset(x: 2, y: -2)
+        HStack(spacing: 10) {
+            Group {
+                if let appURL {
+                    Image(nsImage: NSWorkspace.shared.icon(forFile: appURL.path))
+                        .resizable()
+                } else {
+                    Image(systemName: "app.dashed")
+                        .resizable()
+                        .foregroundStyle(.tertiary)
+                }
             }
+            .frame(width: 22, height: 22)
 
-            Text(title)
-                .font(.system(size: 11, weight: .medium))
-            Text(detail)
-                .font(.system(size: 9))
-                .foregroundStyle(.secondary)
+            Text(name)
+                .font(.system(size: 12, weight: .medium))
+
+            Spacer(minLength: 8)
+
+            status
         }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 8)
-        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-        .contentShape(Rectangle())
+        .padding(.horizontal, 9)
+        .frame(height: 34)
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("\(title): \(detail)")
+    }
 
-        if let action {
-            Button(action: action) { content }
-                .buttonStyle(.plain)
+    @ViewBuilder
+    private var status: some View {
+        if appURL == nil {
+            Text("Not installed")
+                .font(.system(size: 11))
+                .foregroundStyle(.tertiary)
+        } else if isAllowed {
+            Label("Connected", systemImage: "checkmark")
+                .labelStyle(.titleAndIcon)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(.secondary)
         } else {
-            content
+            Button("Allow Access", action: requestAccess)
+                .buttonStyle(.borderedProminent)
+                .controlSize(.small)
+                .help("Let LyricBar read what \(name) is playing")
         }
     }
 }

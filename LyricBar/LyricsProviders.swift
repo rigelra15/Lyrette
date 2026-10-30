@@ -385,9 +385,11 @@ nonisolated final class LyricsSource: Sendable {
         session = URLSession(configuration: config)
     }
 
-    /// With a specific preference only that provider is asked, so the user sees exactly what it has.
+    /// A specific preference is asked first; if it has nothing for this song the other sources are
+    /// tried in their usual order, so a song isn't left without lyrics just because one source lacks it.
     func fetchSyncedLyrics(for query: LyricsQuery, preference: LyricsSourcePreference = .auto) async throws -> LyricsResult {
-        let candidates = providers.filter { preference.providerName == nil || $0.name == preference.providerName }
+        let preferred = providers.filter { $0.name == preference.providerName }
+        let candidates = preferred + providers.filter { $0.name != preference.providerName }
         for provider in candidates {
             do {
                 let lrc = try await provider.fetchSyncedLRC(for: query, session: session)
