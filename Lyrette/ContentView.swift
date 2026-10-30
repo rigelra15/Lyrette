@@ -29,19 +29,30 @@ struct LyretteMenuBarLabel: View {
 
 struct LyretteMenuView: View {
     @ObservedObject var ticker: LyricTicker
-    @State private var accentColor = lyretteBlue
-    @State private var showingFullLyrics = false
+    @State var accentColor = lyretteBlue
+    @State private var page: PopoverPage = .player
+
+    /// The popover opens on the turntable; lyrics and settings slide in from the right.
+    enum PopoverPage {
+        case player, lyrics, settings
+    }
+
+    func show(_ newPage: PopoverPage) {
+        withAnimation(.easeInOut(duration: 0.25)) { page = newPage }
+    }
 
     var body: some View {
         Group {
-            if showingFullLyrics {
-                FullLyricsView(ticker: ticker) {
-                    withAnimation(.easeInOut(duration: 0.25)) { showingFullLyrics = false }
-                }
-                .transition(.move(edge: .trailing).combined(with: .opacity))
-            } else {
-                mainMenuView
+            switch page {
+            case .player:
+                playerView
                     .transition(.move(edge: .leading).combined(with: .opacity))
+            case .lyrics:
+                FullLyricsView(ticker: ticker) { show(.player) }
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
+            case .settings:
+                settingsView
+                    .transition(.move(edge: .trailing).combined(with: .opacity))
             }
         }
         .frame(width: LyrettePopoverMetrics.size.width, height: LyrettePopoverMetrics.size.height)
@@ -55,13 +66,13 @@ struct LyretteMenuView: View {
         }
     }
 
-    private var mainMenuView: some View {
+    private var settingsView: some View {
         VStack(spacing: 10) {
+            settingsHeader
             nowPlayingHeader
             lyricCard
             SeekBarView(ticker: ticker, tint: accentColor)
             playbackControls
-            fullLyricsButton
             connectionsRow
             Spacer(minLength: 0)
             footer
@@ -70,6 +81,26 @@ struct LyretteMenuView: View {
     }
 
     // MARK: Header
+
+    private var settingsHeader: some View {
+        HStack {
+            Button { show(.player) } label: {
+                Label("Player", systemImage: "chevron.left")
+                    .font(.system(size: 12, weight: .semibold))
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(accentColor)
+            .help("Back to the player")
+
+            Spacer()
+
+            Text("Settings")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(.secondary)
+        }
+        .frame(height: 18)
+    }
 
     private var nowPlayingHeader: some View {
         HStack(alignment: .center, spacing: 12) {
@@ -146,7 +177,7 @@ struct LyretteMenuView: View {
         }
     }
 
-    private var currentLyricText: String {
+    var currentLyricText: String {
         if ticker.isFetching {
             return "Finding synchronized lyrics…"
         }
@@ -158,7 +189,7 @@ struct LyretteMenuView: View {
 
     // MARK: Controls
 
-    private var playbackControls: some View {
+    var playbackControls: some View {
         HStack(spacing: 28) {
             playbackButton("backward.fill", help: "Previous track") {
                 ticker.previousTrack()
@@ -194,20 +225,6 @@ struct LyretteMenuView: View {
         }
         .buttonStyle(.plain)
         .help(help)
-    }
-
-    private var fullLyricsButton: some View {
-        Button {
-            withAnimation(.easeInOut(duration: 0.25)) { showingFullLyrics = true }
-        } label: {
-            Label("Show Full Lyrics", systemImage: "text.quote")
-                .font(.system(size: 12, weight: .semibold))
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 9)
-                .foregroundStyle(accentColor)
-                .background(accentColor.opacity(0.14), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: Connections

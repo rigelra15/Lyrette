@@ -34,29 +34,31 @@ Once a song plays in Apple Music or Spotify, Lyrette shows the current line in t
   <img src="docs/menubar.png" alt="Lyrette in the menu bar showing the current lyric line" width="460">
 </p>
 
-Click it to open the popover.
+Click it to open the popover. It opens on a turntable: the record (with the album cover as its label) spins while the song plays and the tonearm lifts when you pause. Below it are the title, the current lyric line, the progress bar and playback controls, plus **Lyrics** (the scrolling lyrics view — click a line to jump to it) and **Settings**.
 
 <table>
   <tr>
-    <td align="center" valign="top"><img src="docs/popover.png" alt="Lyrette popover with song card, lyrics, playback controls and access status" width="360"></td>
-    <td align="center" valign="top"><img src="docs/lyrics.png" alt="Full lyrics view with the current line highlighted" width="360"></td>
+    <td align="center" valign="top"><img src="docs/player.png" alt="Lyrette player with a spinning record, track info and controls" width="250"></td>
+    <td align="center" valign="top"><img src="docs/lyrics.png" alt="Full lyrics view with the current line highlighted" width="250"></td>
+    <td align="center" valign="top"><img src="docs/popover.png" alt="Settings page with song card, lyrics source, timing and player access" width="250"></td>
   </tr>
   <tr>
-    <td align="center"><sub><b>Popover</b> — song card, current line and controls</sub></td>
-    <td align="center"><sub><b>Full lyrics</b> — auto-scrolling, current line in focus</sub></td>
+    <td align="center"><sub><b>Player</b> — spinning record and controls</sub></td>
+    <td align="center"><sub><b>Lyrics</b> — auto-scrolling, current line in focus</sub></td>
+    <td align="center"><sub><b>Settings</b> — source, timing, access</sub></td>
   </tr>
 </table>
 
-What's in the popover:
+What's on the Settings page:
 
 | Control | What it does |
 |---------|--------------|
+| **‹ Player** | Back to the turntable |
 | **Song card** | Cover, title, artist and which player it's coming from |
 | **Lyrics source** (`Auto · LRCLIB`) | Pick LRCLIB, NetEase or BetterLyrics, or *Auto* to try them in order. If your pick has nothing for a song, Lyrette falls back to the others and shows it, e.g. `NetEase → LRCLIB` |
 | **Timing** `−` `0.00s` `+` | `+` moves the lyrics ahead (lines show sooner), `−` holds them back; the arrow resets it. Saved per song |
 | **Progress bar** | Shows the position in the track |
 | **⏮ ⏯ ⏭** | Previous, play/pause and next |
-| **Show Full Lyrics** | Opens the scrolling lyrics view; use **‹** to go back. Click a line to jump to it |
 | **Music / Spotify** | *Connected* means Lyrette can read that player; otherwise click **Allow Access** |
 | **Launch at Login** | Start Lyrette automatically when you sign in |
 | ↻ **Clear cache** · ⬇︎ **Check for updates** · ⓘ **About** · ⏻ **Quit** | Footer buttons |
