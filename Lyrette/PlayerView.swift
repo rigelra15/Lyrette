@@ -10,15 +10,16 @@ extension LyretteMenuView {
                 isPlaying: ticker.isPlaying && ticker.hasNowPlaying,
                 tint: accentColor
             )
-            .frame(height: 262)
+            // The deck gives up height first, so a long lyric with its romanization and
+            // translation is never cut off.
+            .frame(minHeight: 150, maxHeight: 262)
+            .layoutPriority(-1)
 
             trackInfo
 
             SeekBarView(ticker: ticker, tint: accentColor)
 
             playbackControls
-
-            Spacer(minLength: 0)
 
             HStack(spacing: 8) {
                 PageButton(title: "Lyrics", systemImage: "quote.bubble", tint: accentColor) {
@@ -43,15 +44,47 @@ extension LyretteMenuView {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
 
-            Text(currentLyricText)
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(accentColor)
-                .lineLimit(1)
+            currentLyricLines
                 .padding(.top, 3)
-                .contentTransition(.opacity)
-                .animation(.easeInOut(duration: 0.2), value: currentLyricText)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+    }
+}
+
+extension LyretteMenuView {
+    /// The line being sung, in full, with its romanization and translation when those are turned on.
+    var currentLyricLines: some View {
+        let id = ticker.currentLineID
+        let original = ticker.lyricLines.first { $0.id == id }?.text ?? playerFallbackText
+        let romanized = ticker.showRomanization ? id.flatMap { ticker.romanizedLines[$0] } : nil
+        let translated = ticker.showTranslation ? id.flatMap { ticker.translatedLines[$0] } : nil
+
+        return VStack(alignment: .leading, spacing: 2) {
+            Text(original)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(accentColor)
+            if let romanized {
+                Text(romanized)
+                    .font(.system(size: 11, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+            if let translated {
+                Text(translated)
+                    .font(.system(size: 11, weight: .medium))
+                    .italic()
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .animation(.easeInOut(duration: 0.2), value: id)
+    }
+
+    /// Shown when no lyric line is current: loading, an instrumental break, or no lyrics.
+    private var playerFallbackText: String {
+        if ticker.isFetching { return "Finding synchronized lyrics…" }
+        if !ticker.current.isEmpty, ticker.current != "Lyrette" { return ticker.current }
+        return ticker.hasNowPlaying ? "Lyrics will appear here" : "Play a song to see synced lyrics"
     }
 }
 
