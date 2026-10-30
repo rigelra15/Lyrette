@@ -10,7 +10,7 @@
 
 **Lyrette** is a lightweight macOS menu bar app that shows **synchronized lyrics** for whatever is playing in Apple Music or Spotify — the current line, with the album cover, always one glance away.
 
-> **Formerly LyricBar.** If you have LyricBar installed, just accept its next update: it installs Lyrette in its place and keeps your timing offsets, lyrics source, cache and Launch at Login. macOS will ask once more for Music/Spotify access, since Lyrette is a new app to it. Homebrew users get the same with `brew update && brew upgrade --cask lyricbar`.
+> **Formerly LyricBar.** If you have LyricBar installed, just accept its next update: it installs Lyrette in its place and keeps your timing offsets, lyrics source, cache and Launch at Login. macOS will ask once more for Music/Spotify access, since Lyrette is a new app to it. Homebrew users get the same with `brew update && brew upgrade --cask lyricbar` (on Homebrew 7+, run `brew trust rigelra15/lyricbar` first if brew refuses to load the renamed cask).
 
 ## Features
 
