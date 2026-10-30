@@ -60,7 +60,12 @@ private final class LyricBarStatusItemView: NSView {
     private let artworkView = RoundedArtworkView()
     private let fadeMask = CAGradientLayer()
     private static let fadeWidth: CGFloat = 10
+    /// NSTextField insets its text by about 2pt per side; without allowing for it the last glyph is clipped.
+    static let cellPadding: CGFloat = 4
     private var marqueeNeedsRestart = true
+    /// Overflow the running marquee was built for. If the real layout drifts from it (the status
+    /// item resizes in steps), the marquee is rebuilt instead of scrolling by a stale distance.
+    private var appliedOverflow: CGFloat = -1
     var action: (() -> Void)?
 
     var preferredWidth: CGFloat = 280 {
@@ -121,6 +126,11 @@ private final class LyricBarStatusItemView: NSView {
         layoutContent()
     }
 
+    override func layout() {
+        super.layout()
+        layoutContent()
+    }
+
     private func layoutContent() {
         let height = bounds.height
         artworkView.frame = NSRect(
@@ -134,7 +144,7 @@ private final class LyricBarStatusItemView: NSView {
         clipView.frame = NSRect(x: Self.textOrigin, y: 0, width: available, height: height)
         fadeMask.frame = clipView.bounds
 
-        let textWidth = Self.textWidth(titleField.stringValue)
+        let textWidth = Self.textWidth(titleField.stringValue) + Self.cellPadding
         let textHeight = ceil(Self.font.boundingRectForFont.height)
         titleField.frame = NSRect(
             x: 0,
@@ -143,9 +153,11 @@ private final class LyricBarStatusItemView: NSView {
             height: textHeight
         )
 
-        if marqueeNeedsRestart {
+        let overflow = max(0, textWidth - available)
+        if marqueeNeedsRestart || abs(overflow - appliedOverflow) > 0.5 {
             marqueeNeedsRestart = false
-            restartMarquee(overflow: textWidth - available)
+            appliedOverflow = overflow
+            restartMarquee(overflow: overflow)
         }
     }
 
@@ -283,7 +295,7 @@ final class LyricBarStatusItem: NSObject, ObservableObject, NSPopoverDelegate {
     private func applyStatusWidth() {
         guard !popover.isShown else { return }
         let raw = LyricBarStatusItemView.textOrigin
-            + LyricBarStatusItemView.textWidth(lastTitle)
+            + LyricBarStatusItemView.textWidth(lastTitle) + LyricBarStatusItemView.cellPadding
             + LyricBarStatusItemView.trailingInset
         // Rounded up so small changes don't nudge the whole menu bar on every lyric line.
         let width = min(max(ceil(raw / 16) * 16, Self.minStatusWidth), Self.maxStatusWidth)
