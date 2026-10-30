@@ -16,6 +16,9 @@ if ! git diff --quiet || ! git diff --cached --quiet || [ -n "$(git ls-files --o
     exit 1
 fi
 
+# CI commits cask updates to main after each release; stay in sync with it
+git pull --rebase --quiet origin main
+
 # The bump commit adds one more commit, so count it in the version
 COMMIT_COUNT=$(( $(git rev-list --count HEAD) + 1 ))
 VERSION="1.0.${COMMIT_COUNT}"

@@ -1,0 +1,52 @@
+<!doctype html>
+<meta charset="utf-8">
+<style>
+  html,body{margin:0;background:#0a6fe0}
+  .wrap{position:relative;width:1280px;height:640px;overflow:hidden;
+    background:radial-gradient(1200px 700px at 15% 0%,#2ba0ff 0%,#0a7bf0 38%,#0553b8 100%)}
+  svg.bg{position:absolute;inset:0}
+  .logo{position:absolute;left:96px;top:128px;width:240px;height:240px;border-radius:54px;
+    box-shadow:0 30px 60px rgba(0,30,90,.45),0 0 0 6px rgba(255,255,255,.18);transform:rotate(-4deg)}
+  .text{position:absolute;left:388px;top:120px;color:#fff;font-family:-apple-system,'SF Pro Display','Helvetica Neue',sans-serif}
+  h1{margin:0;font-size:104px;line-height:1;font-weight:800;letter-spacing:-3px}
+  .tag{margin-top:14px;font-family:'Bradley Hand','Noteworthy',cursive;font-size:44px;font-weight:bold;opacity:.95}
+  .sub{margin-top:14px;font-size:24px;font-weight:500;opacity:.85}
+  .bar{position:absolute;left:96px;right:96px;bottom:70px;height:72px;border-radius:18px;
+    background:rgba(255,255,255,.16);backdrop-filter:blur(6px);border:2px solid rgba(255,255,255,.35);
+    display:flex;align-items:center;gap:18px;padding:0 24px;color:#fff;font-family:-apple-system,'SF Pro Text',sans-serif}
+  .art{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,#ffd36b,#ff6f91)}
+  .lyric{font-size:28px;font-weight:600}
+  .chip{margin-left:auto;font-size:18px;opacity:.85;border:2px solid rgba(255,255,255,.5);border-radius:999px;padding:6px 16px}
+</style>
+<div class="wrap">
+  <svg class="bg" width="1280" height="640" viewBox="0 0 1280 640" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <filter id="pencil" x="-5%" y="-5%" width="110%" height="110%">
+        <feTurbulence type="fractalNoise" baseFrequency="0.03" numOctaves="2" seed="3" result="w"/>
+        <feDisplacementMap in="SourceGraphic" in2="w" scale="5"/>
+      </filter>
+      <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" seed="8"/>
+        <feColorMatrix type="matrix" values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 0.07 0"/></filter>
+    </defs>
+    <rect width="1280" height="640" filter="url(#grain)"/>
+    <g stroke="#fff" stroke-width="3.2" fill="none" stroke-linecap="round" stroke-linejoin="round" filter="url(#pencil)" opacity="0.85">
+      <path d="M40 36 C400 26 900 44 1240 32 C1250 220 1246 430 1240 604 C860 612 420 600 40 608 C30 420 36 220 40 36Z" opacity="0.5"/>
+      <!-- notes -->
+      <path d="M1010 120 V64 L1056 54 V108"/><ellipse cx="997" cy="124" rx="15" ry="11" transform="rotate(-18 997 124)"/><ellipse cx="1043" cy="113" rx="15" ry="11" transform="rotate(-18 1043 113)"/>
+      <path d="M1150 190 V120 C1174 128 1190 140 1190 164"/><ellipse cx="1136" cy="194" rx="15" ry="11" transform="rotate(-18 1136 194)"/>
+      <!-- stars -->
+      <path d="M900 90 l5 16 16 5 -16 5 -5 16 -5 -16 -16 -5 16 -5z" stroke-width="2.6"/>
+      <path d="M1210 300 l4 12 12 4 -12 4 -4 12 -4 -12 -12 -4 12 -4z" stroke-width="2.4"/>
+      <path d="M720 40 l3 9 9 3 -9 3 -3 9 -3 -9 -9 -3 9 -3z" stroke-width="2"/>
+      <!-- sound waves -->
+      <path transform="translate(0 150)" d="M900 250 V300 M920 232 V318 M940 214 V336 M960 238 V312 M980 256 V294 M1000 244 V306"/>
+    </g>
+  </svg>
+  <img class="logo" src="../../LyricBar%20Rounded.png">
+  <div class="text">
+    <h1>LyricBar</h1>
+    <div class="tag">synced lyrics, right in your menu bar ♪</div>
+    <div class="sub">Apple Music &amp; Spotify · macOS · free &amp; open source</div>
+  </div>
+  <div class="bar"><div class="art"></div><div class="lyric">♪ And I'll be singing along to every line</div><div class="chip">LyricBar</div></div>
+</div>

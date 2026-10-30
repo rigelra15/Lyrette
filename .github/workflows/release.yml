@@ -110,7 +110,7 @@ jobs:
           else
             echo "### Changes since $PREV_TAG" >> release_notes.md
             echo "" >> release_notes.md
-            git log --oneline --no-merges --invert-grep --grep="^chore: bump version" --pretty="format:- %s" "${PREV_TAG}..HEAD" >> release_notes.md
+            git log --oneline --no-merges --invert-grep --grep="^chore: bump version" --grep="^chore: update cask" --pretty="format:- %s" "${PREV_TAG}..HEAD" >> release_notes.md
           fi
 
       - name: Create Release
@@ -123,3 +123,16 @@ jobs:
           make_latest: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Update Homebrew cask
+        run: |
+          VERSION=${GITHUB_REF#refs/tags/v}
+          SHA=$(shasum -a 256 "LyricBar ${VERSION}.dmg" | awk '{print $1}')
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch origin main
+          git checkout -B main origin/main
+          sed -i '' -E "s/^  version \".*\"/  version \"${VERSION}\"/; s/^  sha256 \".*\"/  sha256 \"${SHA}\"/" Casks/lyricbar.rb
+          git add Casks/lyricbar.rb
+          git commit -m "chore: update cask to ${VERSION}" || exit 0
+          git push origin main
