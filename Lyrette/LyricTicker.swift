@@ -629,13 +629,104 @@ final class LyricTicker: ObservableObject {
             let t = [nowPlayingArtist, nowPlayingTitle].filter { !$0.isEmpty }.joined(separator: " - ")
             return t.isEmpty ? "Fetching…" : t
         }
-        return current.isEmpty ? "—" : current
+        let line = displayedCurrentLine
+        return line.isEmpty ? "—" : line
     }
 
     private var syncLines: [LRCLine] = [] {
         didSet {
             lyricGaps = LRCParser.gaps(in: syncLines)
             gapsByIndex = Dictionary(uniqueKeysWithValues: lyricGaps.map { ($0.afterIndex, $0) })
+            romanizedLines = Dictionary(uniqueKeysWithValues: syncLines.compactMap { line in
+                LyricRomanizer.romanize(line.text).map { (line.id, $0) }
+            })
+            translatedLines = [:]
+            refreshTranslation()
+        }
+    }
+
+    // MARK: Romanization & translation
+
+    /// Romanized text per line, for lines in Japanese, Chinese or Korean.
+    @Published private(set) var romanizedLines: [UUID: String] = [:]
+    /// Translated text per line, in `translationTarget`.
+    @Published private(set) var translatedLines: [UUID: String] = [:]
+    @Published private(set) var translationState: LyricsTranslationState = .off
+
+    @Published var showRomanization = UserDefaults.standard.object(forKey: "showRomanization") as? Bool ?? true {
+        didSet { UserDefaults.standard.set(showRomanization, forKey: "showRomanization") }
+    }
+    @Published var showTranslation = UserDefaults.standard.bool(forKey: "showTranslation") {
+        didSet {
+            UserDefaults.standard.set(showTranslation, forKey: "showTranslation")
+            refreshTranslation()
+        }
+    }
+    @Published var menuBarLyricStyle = MenuBarLyricStyle(rawValue: UserDefaults.standard.string(forKey: "menuBarLyricStyle") ?? "") ?? .original {
+        didSet {
+            UserDefaults.standard.set(menuBarLyricStyle.rawValue, forKey: "menuBarLyricStyle")
+            refreshTranslation()
+        }
+    }
+    @Published var translationTarget = UserDefaults.standard.string(forKey: "translationTarget") ?? TranslationTargets.systemDefault {
+        didSet {
+            UserDefaults.standard.set(translationTarget, forKey: "translationTarget")
+            translatedLines = [:]
+            refreshTranslation()
+        }
+    }
+
+    private var translationTask: Task<Void, Never>?
+
+    /// The current line as the menu bar should show it: original, romanized or translated.
+    var displayedCurrentLine: String {
+        guard let id = currentLineID else { return current }
+        switch menuBarLyricStyle {
+        case .original: return current
+        case .romanized: return romanizedLines[id] ?? current
+        case .translated: return translatedLines[id] ?? current
+        }
+    }
+
+    /// Translates the current lyrics if anything wants a translation and it isn't there yet.
+    func refreshTranslation() {
+        translationTask?.cancel()
+        guard showTranslation || menuBarLyricStyle == .translated else {
+            translationState = .off
+            return
+        }
+        let lines = syncLines.filter { !$0.text.trimmingCharacters(in: .whitespaces).isEmpty }
+        guard !lines.isEmpty else {
+            translationState = .off
+            return
+        }
+        if !translatedLines.isEmpty {
+            translationState = .ready
+            return
+        }
+
+        translationState = .working
+        let target = translationTarget
+        translationTask = Task { @MainActor [weak self] in
+            do {
+                let outcome = try await LyricsTranslator.translate(lines.map(\.text), to: target)
+                guard let self, !Task.isCancelled, self.translationTarget == target else { return }
+                switch outcome {
+                case .translated(let texts):
+                    self.translatedLines = Dictionary(uniqueKeysWithValues: zip(lines.map(\.id), texts).filter { !$0.1.isEmpty })
+                    self.translationState = .ready
+                case .needsDownload(let source):
+                    self.translationState = .needsDownload(source: source.minimalIdentifier, target: target)
+                case .sameLanguage:
+                    self.translationState = .sameLanguage
+                case .unsupported:
+                    self.translationState = .unsupported
+                }
+            } catch {
+                guard let self, !Task.isCancelled else { return }
+                NSLog("Lyrette: translation failed: \(error)")
+                self.translationState = .failed
+            }
         }
     }
     private var currentLyricIndex: Int?

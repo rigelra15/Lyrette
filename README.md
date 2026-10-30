@@ -18,6 +18,7 @@
 - **Album artwork** — compact cover in the menu bar, full song card in the popover
 - **Apple Music & Spotify** — detects the playing app automatically
 - **Full lyrics window** — Apple Music–style auto-scrolling view with an animated backdrop and instrumental-break dots
+- **Romanization & translation** — Japanese, Chinese and Korean lines get romaji, pinyin or Revised Romanization right on your Mac, plus optional translation with Apple's on-device Translation; pick which one the menu bar shows
 - **Multiple lyrics sources** — LRCLIB, NetEase and BetterLyrics, or *Auto* to try them in order
 - **Playback controls** — previous, play/pause and next right from the popover
 - **Offline cache** — fetched lyrics are stored locally for instant recall
@@ -56,6 +57,7 @@ What's on the Settings page:
 | **‹ Player** | Back to the turntable |
 | **Song card** | Cover, title, artist and which player it's coming from |
 | **Lyrics source** (`Auto · LRCLIB`) | Pick LRCLIB, NetEase or BetterLyrics, or *Auto* to try them in order. If your pick has nothing for a song, Lyrette falls back to the others and shows it, e.g. `NetEase → LRCLIB` |
+| **Display** (<kbd>Aあ</kbd> button) | Show or hide romanization and translation, choose what the menu bar shows (original, romanization or translation) and the translation language. The first time, macOS may need to download the language for translation |
 | **Timing** `−` `0.00s` `+` | `+` moves the lyrics ahead (lines show sooner), `−` holds them back; the arrow resets it. Saved per song |
 | **Progress bar** | Shows the position in the track |
 | **⏮ ⏯ ⏭** | Previous, play/pause and next |

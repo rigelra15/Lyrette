@@ -154,6 +154,7 @@ struct LyretteMenuView: View {
 
                 Spacer(minLength: 0)
 
+                LyricsDisplayMenu(ticker: ticker, onDarkBackground: false)
                 LyricsSourceMenu(ticker: ticker)
             }
 
@@ -182,7 +183,7 @@ struct LyretteMenuView: View {
             return "Finding synchronized lyrics…"
         }
         if !ticker.current.isEmpty, ticker.current != "Lyrette" {
-            return ticker.current
+            return ticker.displayedCurrentLine
         }
         return ticker.hasNowPlaying ? "Lyrics will appear here" : "Play a song to see synced lyrics"
     }

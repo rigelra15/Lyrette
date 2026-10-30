@@ -61,6 +61,7 @@ struct FullLyricsView: View {
 
             Spacer(minLength: 8)
 
+            LyricsDisplayMenu(ticker: ticker)
             LyricsSourceMenu(ticker: ticker)
         }
         .padding(.horizontal, isEmbedded ? 14 : 20)
@@ -243,6 +244,7 @@ private struct LyricLineRow: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
+        .modifier(LineExtras(line: line, ticker: ticker))
         .scaleEffect(isCurrent ? 1 : 0.88, anchor: .leading)
         .opacity(opacity)
         .blur(radius: blurRadius)
@@ -254,6 +256,34 @@ private struct LyricLineRow: View {
         .onTapGesture(perform: onTap)
         .accessibilityLabel(line.text)
         .accessibilityAddTraits(.isButton)
+    }
+}
+
+/// Romanization and translation under a lyric line, when they're turned on.
+private struct LineExtras: ViewModifier {
+    let line: LRCLine
+    @ObservedObject var ticker: LyricTicker
+
+    func body(content: Content) -> some View {
+        let romanized = ticker.showRomanization ? ticker.romanizedLines[line.id] : nil
+        let translated = ticker.showTranslation ? ticker.translatedLines[line.id] : nil
+        VStack(alignment: .leading, spacing: 4) {
+            content
+            if let romanized {
+                Text(romanized)
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.white.opacity(0.75))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if let translated {
+                Text(translated)
+                    .font(.system(size: 13, weight: .medium))
+                    .italic()
+                    .foregroundStyle(.white.opacity(0.62))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }
 
