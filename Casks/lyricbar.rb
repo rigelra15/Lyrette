@@ -1,6 +1,6 @@
 cask "lyricbar" do
-  version "1.0.33"
-  sha256 "5a5b7c573a0cc5672e162771d46cd97a3f266a4bc612750be1a5fe29f39d84ce"
+  version "1.0.36"
+  sha256 "2e66dd80b93db26bde4cee1c41c0c3e0f623fb87e1ebd7e3027066d7a17653c0"
 
   url "https://github.com/rigelra15/LyricBar/releases/download/v#{version}/LyricBar.#{version}.dmg"
   name "LyricBar"
