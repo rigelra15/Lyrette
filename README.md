@@ -32,7 +32,7 @@
 Once a song plays in Apple Music or Spotify, Lyrette shows the current line in the menu bar, with the album cover. Long lines scroll once across the item, then hold.
 
 <p align="center">
-  <img src="docs/menubar.png" alt="Lyrette in the menu bar showing the current lyric line" width="460">
+  <img src="docs/menubar.png" alt="Lyrette in the menu bar showing the current lyric line" width="280">
 </p>
 
 Click it to open the popover. It opens on a turntable: the record (with the album cover as its label) spins while the song plays and the tonearm lifts when you pause. Below it are the title, the current lyric line, the progress bar and playback controls, plus **Lyrics** (the scrolling lyrics view — click a line to jump to it) and **Settings**.
