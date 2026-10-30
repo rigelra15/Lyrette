@@ -58,6 +58,8 @@ private final class LyricBarStatusItemView: NSView {
     private let clipView = NSView()
     private let titleField = NSTextField(labelWithString: "")
     private let artworkView = RoundedArtworkView()
+    private let fadeMask = CAGradientLayer()
+    private static let fadeWidth: CGFloat = 10
     private var marqueeNeedsRestart = true
     var action: (() -> Void)?
 
@@ -130,6 +132,7 @@ private final class LyricBarStatusItemView: NSView {
 
         let available = max(0, bounds.width - Self.textOrigin - Self.trailingInset)
         clipView.frame = NSRect(x: Self.textOrigin, y: 0, width: available, height: height)
+        fadeMask.frame = clipView.bounds
 
         let textWidth = Self.textWidth(titleField.stringValue)
         let textHeight = ceil(Self.font.boundingRectForFont.height)
@@ -150,7 +153,13 @@ private final class LyricBarStatusItemView: NSView {
     private func restartMarquee(overflow: CGFloat) {
         guard let layer = titleField.layer else { return }
         layer.removeAnimation(forKey: "marquee")
-        guard overflow > 1, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
+        fadeMask.removeAnimation(forKey: "fade")
+        guard overflow > 1 else {
+            clipView.layer?.mask = nil
+            return
+        }
+        configureFadeMask()
+        guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
 
         let hold = 0.9
         let scroll = max(1.2, Double(overflow) / 45)
@@ -165,6 +174,38 @@ private final class LyricBarStatusItemView: NSView {
         animation.fillMode = .forwards
         animation.isRemovedOnCompletion = false
         layer.add(animation, forKey: "marquee")
+
+        // The leading fade only appears once the text starts moving, and the trailing fade
+        // clears when the end of the line is reached.
+        let fade = CAKeyframeAnimation(keyPath: "colors")
+        fade.values = [Self.fadeColors(left: 1, right: 0), Self.fadeColors(left: 1, right: 0), Self.fadeColors(left: 0, right: 1)]
+        fade.keyTimes = animation.keyTimes
+        fade.timingFunctions = animation.timingFunctions
+        fade.duration = animation.duration
+        fade.fillMode = .forwards
+        fade.isRemovedOnCompletion = false
+        fadeMask.add(fade, forKey: "fade")
+    }
+
+    /// Soft edges for text that is wider than the item, instead of a hard cut mid-letter.
+    private func configureFadeMask() {
+        let fraction = Self.fadeWidth / max(clipView.bounds.width, 1)
+        fadeMask.startPoint = CGPoint(x: 0, y: 0.5)
+        fadeMask.endPoint = CGPoint(x: 1, y: 0.5)
+        fadeMask.locations = [0, NSNumber(value: fraction), NSNumber(value: 1 - fraction), 1]
+        fadeMask.colors = Self.fadeColors(left: 1, right: 0)
+        fadeMask.frame = clipView.bounds
+        clipView.layer?.mask = fadeMask
+    }
+
+    /// `left`/`right` are the alpha of the outer edge stops: 1 = no fade, 0 = fully faded.
+    private static func fadeColors(left: CGFloat, right: CGFloat) -> [CGColor] {
+        [
+            NSColor.black.withAlphaComponent(left).cgColor,
+            NSColor.black.cgColor,
+            NSColor.black.cgColor,
+            NSColor.black.withAlphaComponent(right).cgColor
+        ]
     }
 
     override func mouseDown(with event: NSEvent) {
@@ -246,6 +287,10 @@ final class LyricBarStatusItem: NSObject, ObservableObject, NSPopoverDelegate {
             + LyricBarStatusItemView.trailingInset
         // Rounded up so small changes don't nudge the whole menu bar on every lyric line.
         let width = min(max(ceil(raw / 16) * 16, Self.minStatusWidth), Self.maxStatusWidth)
+        setStatusWidth(width)
+    }
+
+    private func setStatusWidth(_ width: CGFloat) {
         guard width != statusView.preferredWidth else { return }
         statusView.preferredWidth = width
         statusView.setFrameSize(NSSize(width: width, height: 22))
@@ -276,12 +321,19 @@ final class LyricBarStatusItem: NSObject, ObservableObject, NSPopoverDelegate {
             popover.performClose(nil)
         } else {
             popover.contentSize = Self.popoverSize
-            popover.show(
-                relativeTo: statusView.bounds,
-                of: statusView,
-                preferredEdge: .minY
-            )
-            NSApp.activate(ignoringOtherApps: true)
+            // The width stays fixed while the popover is open (it's anchored to this item), so
+            // open it at full width: long lines then have room instead of scrolling in a small box.
+            setStatusWidth(Self.maxStatusWidth)
+            // Give the status item a beat to take its new frame so the popover centers on it.
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.06) { [weak self] in
+                guard let self else { return }
+                self.popover.show(
+                    relativeTo: self.statusView.bounds,
+                    of: self.statusView,
+                    preferredEdge: .minY
+                )
+                NSApp.activate(ignoringOtherApps: true)
+            }
         }
     }
 }
