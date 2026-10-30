@@ -688,8 +688,19 @@ final class LyricTicker: ObservableObject {
         }
     }
 
+    /// Asks macOS to download a translation language, then translates once it's installed.
+    func downloadTranslationLanguage(source: String, target: String) {
+        translationState = .downloading
+        TranslationDownloader.download(source: source, target: target) { [weak self] _ in
+            guard let self else { return }
+            self.translationState = .off
+            self.refreshTranslation()
+        }
+    }
+
     /// Translates the current lyrics if anything wants a translation and it isn't there yet.
     func refreshTranslation() {
+        if translationState == .downloading { return }
         translationTask?.cancel()
         guard showTranslation || menuBarLyricStyle == .translated else {
             translationState = .off

@@ -177,6 +177,8 @@ enum LyricsTranslationState: Equatable {
     case ready
     /// The on-device model for this pair isn't downloaded yet; the user can download it.
     case needsDownload(source: String, target: String)
+    /// macOS is downloading the model in the background.
+    case downloading
     /// Lyrics are already in the target language.
     case sameLanguage
     case unsupported
@@ -187,7 +189,27 @@ enum LyricsTranslationState: Equatable {
 
 /// Translates lyric lines with Apple's on-device Translation models.
 enum LyricsTranslator {
+    /// Lyrics often mix languages (K-pop with English hooks), so script wins over word statistics:
+    /// any meaningful amount of kana, Hangul or Han decides the language before NaturalLanguage does.
     static func detectLanguage(of lines: [String]) -> Locale.Language? {
+        var kana = 0, hangul = 0, han = 0, letters = 0
+        for scalar in lines.joined().unicodeScalars {
+            switch scalar.value {
+            case 0x3040...0x30FF: kana += 1
+            case 0xAC00...0xD7AF, 0x1100...0x11FF, 0x3130...0x318F: hangul += 1
+            case 0x3400...0x4DBF, 0x4E00...0x9FFF: han += 1
+            default: if CharacterSet.letters.contains(scalar) { letters += 1 }
+            }
+        }
+        let cjk = kana + hangul + han
+        if cjk > 0, Double(cjk) / Double(cjk + letters) > 0.15 {
+            if kana > 0 { return Locale.Language(identifier: "ja") }
+            if hangul >= han { return Locale.Language(identifier: "ko") }
+            let recognizer = NLLanguageRecognizer()
+            recognizer.processString(lines.joined(separator: "\n"))
+            return Locale.Language(identifier: recognizer.dominantLanguage == .traditionalChinese ? "zh-Hant" : "zh-Hans")
+        }
+
         let recognizer = NLLanguageRecognizer()
         recognizer.processString(lines.joined(separator: "\n"))
         guard let dominant = recognizer.dominantLanguage, dominant != .undetermined else { return nil }
@@ -242,9 +264,6 @@ struct LyricsDisplayMenu: View {
     @ObservedObject var ticker: LyricTicker
     var onDarkBackground = true
 
-    /// Set to ask macOS to download a translation model; `.translationTask` shows the download prompt.
-    @State private var downloadConfiguration: TranslationSession.Configuration?
-
     var body: some View {
         Menu {
             Toggle("Show Romanization", isOn: $ticker.showRomanization)
@@ -267,10 +286,7 @@ struct LyricsDisplayMenu: View {
             if case let .needsDownload(source, target) = ticker.translationState {
                 Divider()
                 Button("Download \(TranslationTargets.name(for: source)) → \(TranslationTargets.name(for: target)) for Translation…") {
-                    downloadConfiguration = TranslationSession.Configuration(
-                        source: Locale.Language(identifier: source),
-                        target: Locale.Language(identifier: target)
-                    )
+                    ticker.downloadTranslationLanguage(source: source, target: target)
                 }
             }
             if let note = statusNote {
@@ -287,22 +303,112 @@ struct LyricsDisplayMenu: View {
         .menuIndicator(.hidden)
         .fixedSize()
         .help("Romanization & translation")
-        .translationTask(downloadConfiguration) { session in
-            try? await session.prepareTranslation()
-            await MainActor.run {
-                downloadConfiguration = nil
-                ticker.refreshTranslation()
-            }
-        }
     }
 
     private var statusNote: String? {
         switch ticker.translationState {
         case .working: return "Translating…"
+        case .downloading: return "Downloading language… translations appear when it's done"
         case .sameLanguage: return "Lyrics are already in \(TranslationTargets.name(for: ticker.translationTarget))"
         case .unsupported: return "Translation isn't available for this language"
         case .failed: return "Translation failed"
         default: return nil
+        }
+    }
+}
+
+// MARK: - Model download
+
+/// macOS only shows its "download language" prompt from a regular window, not from a menu bar
+/// popover, so the download runs in a small window of its own.
+@MainActor
+enum TranslationDownloader {
+    private static var window: NSWindow?
+
+    /// Shows macOS's download sheet, then waits (in the background) until the language is installed.
+    /// `completion` gets true once translation can run, false if it never got installed.
+    static func download(source: String, target: String, completion: @escaping (Bool) -> Void) {
+        window?.close()
+        let configuration = TranslationSession.Configuration(
+            source: Locale.Language(identifier: source),
+            target: Locale.Language(identifier: target)
+        )
+        let view = TranslationDownloadView(
+            title: "\(TranslationTargets.name(for: source)) → \(TranslationTargets.name(for: target))",
+            configuration: configuration
+        ) {
+            window?.close()
+            window = nil
+            Task { @MainActor in
+                let installed = await waitUntilInstalled(configuration)
+                if !installed { showSettingsFallback() }
+                completion(installed)
+            }
+        }
+        let hosting = NSHostingController(rootView: view)
+        let newWindow = NSWindow(contentViewController: hosting)
+        newWindow.title = "Lyrette Translation"
+        newWindow.styleMask = [.titled, .closable]
+        newWindow.isReleasedWhenClosed = false
+        newWindow.setContentSize(NSSize(width: 340, height: 130))
+        newWindow.center()
+        window = newWindow
+        NSApp.activate(ignoringOtherApps: true)
+        newWindow.makeKeyAndOrderFront(nil)
+    }
+
+    /// Downloads keep going after the sheet closes; check every few seconds for up to 20 minutes.
+    private static func waitUntilInstalled(_ configuration: TranslationSession.Configuration) async -> Bool {
+        let availability = LanguageAvailability()
+        let source = configuration.source ?? Locale.Language(identifier: "en")
+        for _ in 0..<240 {
+            if await availability.status(from: source, to: configuration.target) == .installed { return true }
+            try? await Task.sleep(nanoseconds: 5_000_000_000)
+        }
+        return false
+    }
+
+    /// If the prompt was dismissed or couldn't appear, point to where macOS manages the languages.
+    private static func showSettingsFallback() {
+        let alert = NSAlert()
+        alert.messageText = "Translation language not downloaded"
+        alert.informativeText = "You can download it in System Settings → General → Language & Region → Translation Languages, then turn translation on again."
+        alert.addButton(withTitle: "Open System Settings")
+        alert.addButton(withTitle: "Cancel")
+        NSApp.activate(ignoringOtherApps: true)
+        if alert.runModal() == .alertFirstButtonReturn,
+           let url = URL(string: "x-apple.systempreferences:com.apple.Localization-Settings.extension") {
+            NSWorkspace.shared.open(url)
+        }
+    }
+}
+
+private struct TranslationDownloadView: View {
+    let title: String
+    let configuration: TranslationSession.Configuration
+    let onFinish: () -> Void
+
+    var body: some View {
+        VStack(spacing: 10) {
+            ProgressView().controlSize(.small)
+            Text("Preparing \(title) translation…")
+                .font(.system(size: 12, weight: .medium))
+            Text("macOS will ask to download the language.")
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
+        }
+        .padding(20)
+        .frame(width: 340, height: 130)
+        .translationTask(configuration) { session in
+            do {
+                // Translating something is what makes macOS show its "download languages" sheet;
+                // prepareTranslation() alone returns without asking.
+                try await session.prepareTranslation()
+                _ = try await session.translate("Hello")
+            } catch {
+                NSLog("Lyrette: translation download sheet ended: \(error)")
+            }
+            await MainActor.run { onFinish() }
         }
     }
 }
