@@ -86,8 +86,22 @@ struct TurntableDeck: View {
     var body: some View {
         GeometryReader { proxy in
             let size = proxy.size
-            let recordSize = min(size.height - 24, size.width * 0.66)
-            let recordCenter = CGPoint(x: size.width * 0.43, y: size.height / 2)
+            // The record sits half inside its sleeve, peeking out to the right.
+            let sleeveSize = min(size.height - 40, size.width * 0.56)
+            let sleeveOrigin = CGPoint(x: 18, y: (size.height - sleeveSize) / 2)
+            let recordSize = sleeveSize * 0.96
+            let recordCenter = CGPoint(x: sleeveOrigin.x + sleeveSize, y: size.height / 2)
+
+            // Tonearm pivots in the top-right corner; when playing, the stylus lands on the outer
+            // grooves of the visible half, a little above the record's horizontal centre line.
+            let pivot = CGPoint(x: size.width - 26, y: 30)
+            let radius = recordSize / 2
+            let stylus = CGPoint(
+                x: recordCenter.x + radius * 0.8 * cos(.pi / 9),
+                y: recordCenter.y - radius * 0.8 * sin(.pi / 9)
+            )
+            let reach = hypot(stylus.x - pivot.x, stylus.y - pivot.y)
+            let playAngle = atan2(pivot.x - stylus.x, stylus.y - pivot.y) * 180 / .pi
 
             ZStack {
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
@@ -105,13 +119,48 @@ struct TurntableDeck: View {
 
                 SpinningRecord(artwork: artwork, isPlaying: isPlaying, tint: tint)
                     .frame(width: recordSize, height: recordSize)
-                    .shadow(color: .black.opacity(0.35), radius: 12, y: 6)
+                    .shadow(color: .black.opacity(0.35), radius: 10, y: 5)
                     .position(recordCenter)
 
-                Tonearm(isPlaying: isPlaying, length: recordSize * 0.78)
-                    .position(x: size.width - 38, y: 34)
+                AlbumSleeve(artwork: artwork, tint: tint)
+                    .frame(width: sleeveSize, height: sleeveSize)
+                    .position(x: sleeveOrigin.x + sleeveSize / 2, y: size.height / 2)
+
+                Tonearm(isPlaying: isPlaying, length: reach - 20, playAngle: playAngle)
+                    .position(x: pivot.x, y: pivot.y + 15)
             }
         }
+    }
+}
+
+/// The record's cardboard sleeve, printed with the album cover.
+private struct AlbumSleeve: View {
+    let artwork: NSImage?
+    let tint: Color
+
+    var body: some View {
+        ZStack {
+            if let artwork {
+                Image(nsImage: artwork)
+                    .resizable()
+                    .scaledToFill()
+            } else {
+                LinearGradient(colors: [tint, tint.opacity(0.6)], startPoint: .topLeading, endPoint: .bottomTrailing)
+                Image(systemName: "music.note")
+                    .font(.system(size: 34, weight: .bold))
+                    .foregroundStyle(.white.opacity(0.85))
+            }
+        }
+        .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+        .overlay {
+            // A faint highlight along the top edge, like light catching the cardboard.
+            RoundedRectangle(cornerRadius: 4, style: .continuous)
+                .strokeBorder(
+                    LinearGradient(colors: [.white.opacity(0.35), .white.opacity(0.05)], startPoint: .top, endPoint: .bottom),
+                    lineWidth: 1
+                )
+        }
+        .shadow(color: .black.opacity(0.4), radius: 10, x: 2, y: 6)
     }
 }
 
@@ -254,8 +303,10 @@ private struct RecordLabel: View {
 private struct Tonearm: View {
     let isPlaying: Bool
     let length: CGFloat
+    /// Swing, in degrees clockwise from hanging straight down, that puts the stylus on the record.
+    let playAngle: Double
 
-    private var angle: Double { isPlaying ? 24 : 4 }
+    private var angle: Double { isPlaying ? playAngle : 2 }
 
     var body: some View {
         ZStack(alignment: .top) {
