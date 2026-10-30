@@ -379,22 +379,28 @@ private struct GapDotsRow: View {
             let span = max(gap.end - gap.start, 0.1)
             let progress = min(1, max(0, (position - gap.start) / span))
             // Shrink away over the last stretch so the next line takes over smoothly.
-            let exit = progress > 0.94 ? max(0, 1 - (progress - 0.94) / 0.06) : 1
+            let exit: Double = progress > 0.94 ? max(0.0, 1.0 - (progress - 0.94) / 0.06) : 1.0
 
             HStack(spacing: 10) {
                 ForEach(0..<3, id: \.self) { index in
-                    let fill = min(1, max(0, progress * 3 - Double(index)))
+                    let fill: Double = min(1.0, max(0.0, progress * 3.0 - Double(index)))
                     Circle()
                         .fill(.white.opacity(0.3 + 0.7 * fill))
                         .frame(width: 12, height: 12)
                         .scaleEffect(0.82 + 0.18 * fill)
                 }
             }
-            .scaleEffect((1 + 0.07 * sin(position * 2.4)) * (0.4 + 0.6 * exit), anchor: .leading)
+            .scaleEffect(gapScale(position: position, exit: exit), anchor: .leading)
             .opacity(exit)
         }
         .frame(maxWidth: .infinity, minHeight: 34, alignment: .leading)
         .accessibilityLabel("Instrumental break")
+    }
+
+    private func gapScale(position: Double, exit: Double) -> CGFloat {
+        let pulse: Double = 1.0 + 0.07 * sin(position * 2.4)
+        let shrink: Double = 0.4 + 0.6 * exit
+        return CGFloat(pulse * shrink)
     }
 }
 
