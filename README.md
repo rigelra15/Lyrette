@@ -4,8 +4,8 @@
 
 <p align="center">
   <a href="https://github.com/rigelra15/LyricBar/releases/latest"><img src="https://img.shields.io/github/v/release/rigelra15/LyricBar?color=0a7bf0&label=release" alt="Latest release"></a>
-  <img src="https://img.shields.io/badge/macOS-26%2B-0a7bf0" alt="macOS 26+">
-  <a href="LICENSE"><img src="https://img.shields.io/badge/license-MIT-0a7bf0" alt="MIT license"></a>
+  <img src="docs/badge-macos.svg" alt="macOS 26.5+">
+  <a href="LICENSE"><img src="docs/badge-license.svg" alt="MIT license"></a>
 </p>
 
 **LyricBar** is a lightweight macOS menu bar app that shows **synchronized lyrics** for whatever is playing in Apple Music or Spotify — the current line, with the album cover, always one glance away.
@@ -23,6 +23,43 @@
 - **Menu bar only** — no Dock icon, no clutter
 - **Launch at Login** — optional toggle in the popover
 - **Built-in updates** — checks for new versions on launch and shows the changelog
+
+## Using LyricBar
+
+Once a song plays in Apple Music or Spotify, LyricBar shows the current line in the menu bar, with the album cover. Long lines scroll once across the item, then hold.
+
+<p align="center">
+  <img src="docs/menubar.png" alt="LyricBar in the menu bar showing the current lyric line" width="460">
+</p>
+
+Click it to open the popover.
+
+<table>
+  <tr>
+    <td align="center" valign="top"><img src="docs/popover.png" alt="LyricBar popover with song card, lyrics, playback controls and access status" width="360"></td>
+    <td align="center" valign="top"><img src="docs/lyrics.png" alt="Full lyrics view with the current line highlighted" width="360"></td>
+  </tr>
+  <tr>
+    <td align="center"><sub><b>Popover</b> — song card, current line and controls</sub></td>
+    <td align="center"><sub><b>Full lyrics</b> — auto-scrolling, current line in focus</sub></td>
+  </tr>
+</table>
+
+What's in the popover:
+
+| Control | What it does |
+|---------|--------------|
+| **Song card** | Cover, title, artist and which player it's coming from |
+| **Lyrics source** (`Auto · LRCLIB`) | Pick LRCLIB, NetEase or BetterLyrics, or *Auto* to try them in order |
+| **Timing** `−` `0.00s` `+` | Nudge the lyrics earlier or later if they're slightly off; the arrow resets it. Saved per song |
+| **Progress bar** | Shows the position in the track |
+| **⏮ ⏯ ⏭** | Previous, play/pause and next |
+| **Show Full Lyrics** | Opens the scrolling lyrics view; use **‹** to go back. Click a line to jump to it |
+| **Music / Spotify** | Green dot and *Allowed* mean Automation access is granted |
+| **Launch at Login** | Start LyricBar automatically when you sign in |
+| ↻ **Clear cache** · ⬇︎ **Check for updates** · ⓘ **About** · ⏻ **Quit** | Footer buttons |
+
+Between lines — an intro or instrumental break — the menu bar shows three dots that fill in as the break plays out.
 
 ## Install
 
@@ -108,9 +145,21 @@ If LyricBar was set to launch at login, also remove it under **System Settings �
 
 ## Requirements
 
-- macOS 26 or later
-- Apple Music and/or Spotify desktop app
-- Automation permission for those apps (asked on first launch)
+| What | Details |
+|------|---------|
+| **macOS** | 26.5 (Tahoe) or later |
+| **Mac** | Apple Silicon or Intel (universal build) |
+| **Music player** | Apple Music (the built-in Music app) and/or the Spotify desktop app, running and playing |
+| **Internet** | Needed to fetch lyrics and album artwork (lyrics are cached afterwards) |
+| **Permission** | *Automation* access to Music and/or Spotify, asked on first launch — see below |
+
+No accounts, API keys or sign-in are needed. LyricBar is **not sandboxed** and doesn't use the Accessibility or Screen Recording permissions.
+
+### Granting Automation access
+
+LyricBar reads the current track through AppleScript, so macOS asks once per player: *"LyricBar wants to control Music"* (and the same for Spotify). Click **OK**.
+
+Missed it or clicked *Don't Allow*? Open **System Settings → Privacy & Security → Automation**, expand **LyricBar** and switch **Music** / **Spotify** on. The popover shows a checkmark once access is granted.
 
 ## How it works
 
