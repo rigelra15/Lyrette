@@ -1,23 +1,407 @@
 import SwiftUI
+import AppKit
+import ServiceManagement
 
-struct ContentView: View {
-    @EnvironmentObject var ticker: LyricTicker
+let lyricBarBlue = Color(red: 0, green: 129.0 / 255.0, blue: 251.0 / 255.0)
+
+func dominantColor(from data: Data?) -> Color {
+    let accent = ArtworkAccent.dominantRGB(from: data)
+    return Color(red: accent.red, green: accent.green, blue: accent.blue)
+}
+
+/// The popover never resizes: the status item anchors to it, so any size change would make it jump.
+enum LyricBarPopoverMetrics {
+    static let size = CGSize(width: 360, height: 520)
+}
+
+struct LyricBarMenuBarLabel: View {
+    @ObservedObject var ticker: LyricTicker
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            Text("LyricBar")
-                .font(.headline)
+        Text(ticker.menuBarTitle)
+            .font(.system(size: 13, weight: .medium))
+            .lineLimit(1)
+            .truncationMode(.tail)
+            .frame(width: 150, alignment: .leading)
+            .clipped()
+    }
+}
 
-            Text(ticker.current.isEmpty ? "—" : ticker.current)
-                .font(.title3)
-                .bold()
-                .lineLimit(2)
+struct LyricBarMenuView: View {
+    @ObservedObject var ticker: LyricTicker
+    @State private var accentColor = lyricBarBlue
+    @State private var showingFullLyrics = false
+
+    var body: some View {
+        Group {
+            if showingFullLyrics {
+                FullLyricsView(ticker: ticker) {
+                    withAnimation(.easeInOut(duration: 0.25)) { showingFullLyrics = false }
+                }
+                .transition(.move(edge: .trailing).combined(with: .opacity))
+            } else {
+                mainMenuView
+                    .transition(.move(edge: .leading).combined(with: .opacity))
+            }
         }
-        .padding()
+        .frame(width: LyricBarPopoverMetrics.size.width, height: LyricBarPopoverMetrics.size.height)
+        .clipped()
+        .background(.regularMaterial)
+        .onAppear {
+            accentColor = dominantColor(from: ticker.albumArtData)
+        }
+        .onChange(of: ticker.albumArtData) { _, newData in
+            accentColor = dominantColor(from: newData)
+        }
+    }
+
+    private var mainMenuView: some View {
+        VStack(spacing: 10) {
+            nowPlayingHeader
+            lyricCard
+            SeekBarView(ticker: ticker, tint: accentColor)
+            playbackControls
+            fullLyricsButton
+            connectionsRow
+            Spacer(minLength: 0)
+            footer
+        }
+        .padding(16)
+    }
+
+    // MARK: Header
+
+    private var nowPlayingHeader: some View {
+        HStack(alignment: .center, spacing: 12) {
+            AlbumArtworkView(
+                image: ticker.albumArtImage,
+                size: 72,
+                isLoading: ticker.albumArtIsLoading
+            )
+
+            VStack(alignment: .leading, spacing: 3) {
+                Text(ticker.hasNowPlaying ? ticker.nowPlayingTitle : "Nothing playing")
+                    .font(.system(size: 16, weight: .semibold))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text(ticker.hasNowPlaying ? ticker.nowPlayingArtist : "Play a song in Music or Spotify")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+
+                if ticker.hasNowPlaying, !ticker.playingAppName.isEmpty {
+                    HStack(spacing: 4) {
+                        Image(systemName: ticker.playingAppName == "Spotify" ? "waveform" : "music.note")
+                        Text(ticker.playingAppName)
+                    }
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(accentColor)
+                    .padding(.top, 2)
+                }
+            }
+
+            Spacer(minLength: 0)
+        }
+        .frame(height: 72)
+    }
+
+    // MARK: Lyric card
+
+    private var lyricCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Label("LYRICS", systemImage: "quote.opening")
+                    .font(.system(size: 10, weight: .bold))
+                    .tracking(0.8)
+                    .foregroundStyle(.secondary)
+
+                if ticker.isFetching {
+                    ProgressView()
+                        .controlSize(.mini)
+                }
+
+                Spacer(minLength: 0)
+
+                LyricsSourceMenu(ticker: ticker)
+            }
+
+            // Fixed two-line slot so a long lyric never changes the layout.
+            Text(currentLyricText)
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .lineLimit(2)
+                .minimumScaleFactor(0.85)
+                .frame(maxWidth: .infinity, minHeight: 42, maxHeight: 42, alignment: .topLeading)
+
+            LyricsOffsetControl(ticker: ticker)
+        }
+        .padding(12)
+        .background(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .fill(.thinMaterial)
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(accentColor.opacity(0.4), lineWidth: 1)
+        }
+    }
+
+    private var currentLyricText: String {
+        if ticker.isFetching {
+            return "Finding synchronized lyrics…"
+        }
+        if !ticker.current.isEmpty, ticker.current != "LyricBar" {
+            return ticker.current
+        }
+        return ticker.hasNowPlaying ? "Lyrics will appear here" : "Play a song to see synced lyrics"
+    }
+
+    // MARK: Controls
+
+    private var playbackControls: some View {
+        HStack(spacing: 28) {
+            playbackButton("backward.fill", help: "Previous track") {
+                ticker.previousTrack()
+            }
+
+            Button {
+                ticker.togglePlayPause()
+            } label: {
+                Image(systemName: ticker.isPlaying ? "pause.fill" : "play.fill")
+                    .font(.system(size: 15, weight: .bold))
+                    .frame(width: 42, height: 42)
+                    .foregroundStyle(.white)
+                    .background(Circle().fill(accentColor))
+            }
+            .buttonStyle(.plain)
+            .help(ticker.isPlaying ? "Pause" : "Play")
+
+            playbackButton("forward.fill", help: "Next track") {
+                ticker.nextTrack()
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .disabled(!ticker.hasNowPlaying)
+        .opacity(ticker.hasNowPlaying ? 1 : 0.45)
+    }
+
+    private func playbackButton(_ systemName: String, help: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 16, weight: .semibold))
+                .frame(width: 34, height: 34)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(help)
+    }
+
+    private var fullLyricsButton: some View {
+        Button {
+            withAnimation(.easeInOut(duration: 0.25)) { showingFullLyrics = true }
+        } label: {
+            Label("Show Full Lyrics", systemImage: "text.quote")
+                .font(.system(size: 12, weight: .semibold))
+                .frame(maxWidth: .infinity)
+                .padding(.vertical, 9)
+                .foregroundStyle(accentColor)
+                .background(accentColor.opacity(0.14), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        }
+        .buttonStyle(.plain)
+    }
+
+    // MARK: Connections
+
+    private var connectionsRow: some View {
+        HStack(spacing: 8) {
+            ConnectionChip(
+                title: "Music",
+                detail: ticker.musicAccessOK ? "Allowed" : "Allow access",
+                systemImage: "music.note",
+                isConnected: ticker.musicAccessOK,
+                tint: accentColor
+            ) {
+                ticker.requestAutomationAccess(app: .music)
+            }
+
+            ConnectionChip(
+                title: "Spotify",
+                detail: ticker.spotifyAccessOK ? "Allowed" : "Allow access",
+                systemImage: "waveform",
+                isConnected: ticker.spotifyAccessOK,
+                tint: accentColor
+            ) {
+                ticker.requestAutomationAccess(app: .spotify)
+            }
+        }
+    }
+
+    // MARK: Footer
+
+    private var footer: some View {
+        VStack(spacing: 10) {
+            Divider()
+
+            HStack(spacing: 4) {
+                LaunchAtLoginRow()
+
+                Spacer(minLength: 0)
+
+                FooterIconButton(systemName: "arrow.clockwise", help: "Clear lyrics cache") {
+                    ticker.clearCache()
+                }
+                FooterIconButton(systemName: "info.circle", help: "About LyricBar") {
+                    DispatchQueue.main.async {
+                        LyricBarWindows.shared.showAbout()
+                    }
+                }
+                FooterIconButton(systemName: "power", help: "Quit LyricBar") {
+                    NSApp.terminate(nil)
+                }
+            }
+        }
+    }
+}
+
+// MARK: - Components
+
+struct AlbumArtworkView: View {
+    let image: NSImage?
+    let size: CGFloat
+    var isLoading = false
+    var showsShadow = true
+
+    var body: some View {
+        ZStack {
+            RoundedRectangle(cornerRadius: size * 0.18, style: .continuous)
+                .fill(
+                    LinearGradient(
+                        colors: [lyricBarBlue.opacity(0.9), lyricBarBlue.opacity(0.75)],
+                        startPoint: .topLeading,
+                        endPoint: .bottomTrailing
+                    )
+                )
+
+            if let image {
+                Image(nsImage: image)
+                    .resizable()
+                    .interpolation(.high)
+                    .aspectRatio(contentMode: .fill)
+            } else {
+                Image(systemName: "music.note")
+                    .font(.system(size: size * 0.34, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.9))
+            }
+
+            if isLoading {
+                RoundedRectangle(cornerRadius: size * 0.18, style: .continuous)
+                    .fill(.black.opacity(0.18))
+                ProgressView()
+                    .controlSize(.small)
+                    .tint(.white)
+            }
+        }
+        .frame(width: size, height: size)
+        .clipShape(RoundedRectangle(cornerRadius: size * 0.18, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: size * 0.18, style: .continuous)
+                .strokeBorder(.white.opacity(0.14), lineWidth: 1)
+        }
+        .shadow(color: .black.opacity(showsShadow ? 0.2 : 0), radius: 6, y: 3)
+        .accessibilityLabel("Album artwork")
+    }
+}
+
+private struct ConnectionChip: View {
+    let title: String
+    let detail: String
+    let systemImage: String
+    let isConnected: Bool
+    let tint: Color
+    var action: (() -> Void)?
+
+    var body: some View {
+        let content = VStack(spacing: 4) {
+            ZStack(alignment: .topTrailing) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(isConnected ? tint : .secondary)
+                    .frame(width: 30, height: 30)
+                    .background(.quaternary, in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+
+                Circle()
+                    .fill(isConnected ? Color.green : Color.secondary.opacity(0.5))
+                    .frame(width: 7, height: 7)
+                    .offset(x: 2, y: -2)
+            }
+
+            Text(title)
+                .font(.system(size: 11, weight: .medium))
+            Text(detail)
+                .font(.system(size: 9))
+                .foregroundStyle(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 8)
+        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+        .contentShape(Rectangle())
+        .accessibilityElement(children: .combine)
+        .accessibilityLabel("\(title): \(detail)")
+
+        if let action {
+            Button(action: action) { content }
+                .buttonStyle(.plain)
+        } else {
+            content
+        }
+    }
+}
+
+private struct FooterIconButton: View {
+    let systemName: String
+    let help: String
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 13, weight: .medium))
+                .foregroundStyle(.secondary)
+                .frame(width: 30, height: 26)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(help)
+        .accessibilityLabel(help)
+    }
+}
+
+private struct LaunchAtLoginRow: View {
+    @State private var isEnabled = SMAppService.mainApp.status == .enabled
+
+    var body: some View {
+        Toggle(isOn: $isEnabled) {
+            Text("Launch at Login")
+                .font(.system(size: 11, weight: .medium))
+        }
+        .toggleStyle(.switch)
+        .controlSize(.mini)
+        .onChange(of: isEnabled) { _, enabled in
+            do {
+                if enabled {
+                    try SMAppService.mainApp.register()
+                } else {
+                    try SMAppService.mainApp.unregister()
+                }
+            } catch {
+                isEnabled = !enabled
+                NSLog("LyricBar: launch at login failed: \(error)")
+            }
+        }
     }
 }
 
 #Preview {
-    ContentView()
-        .environmentObject(LyricTicker())
+    let ticker = LyricTicker()
+    LyricBarMenuView(ticker: ticker)
 }
