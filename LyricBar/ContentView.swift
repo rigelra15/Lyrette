@@ -250,6 +250,11 @@ struct LyricBarMenuView: View {
                 FooterIconButton(systemName: "arrow.clockwise", help: "Clear lyrics cache") {
                     ticker.clearCache()
                 }
+                FooterIconButton(systemName: "arrow.down.circle", help: "Check for updates") {
+                    DispatchQueue.main.async {
+                        UpdateChecker.shared.checkNow()
+                    }
+                }
                 FooterIconButton(systemName: "info.circle", help: "About LyricBar") {
                     DispatchQueue.main.async {
                         LyricBarWindows.shared.showAbout()

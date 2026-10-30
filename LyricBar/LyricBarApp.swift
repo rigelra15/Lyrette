@@ -18,6 +18,9 @@ struct LyricBarApp: App {
         DispatchQueue.main.asyncAfter(deadline: .now() + 2) {
             ticker.startMonitoringNowPlaying()
         }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            UpdateChecker.shared.checkOnLaunch()
+        }
     }
 
     var body: some Scene {
