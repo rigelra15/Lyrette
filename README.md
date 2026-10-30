@@ -35,6 +35,8 @@ brew tap rigelra15/lyricbar https://github.com/rigelra15/LyricBar
 brew install --cask lyricbar
 ```
 
+On Homebrew 7+, third-party taps must be trusted first: run `brew trust rigelra15/lyricbar` if brew refuses to load the cask.
+
 ### One-line installer (curl)
 
 ```bash
