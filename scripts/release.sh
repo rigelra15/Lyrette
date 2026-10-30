@@ -1,34 +1,41 @@
 #!/bin/bash
+# Usage: commit your work with a conventional message, then run ./scripts/release.sh
+# Version = 1.0.<commit count>, so it auto-increments with every commit.
 set -e
 
 cd "$(dirname "$0")/.."
 
-# 1. Commit any pending changes
-if ! git diff --quiet || ! git diff --cached --quiet; then
-    echo "==> Committing pending changes..."
-    git add -A
-    git commit -m "chore: uncommitted changes before release" || true
+BRANCH=$(git rev-parse --abbrev-ref HEAD)
+if [ "$BRANCH" != "main" ]; then
+    echo "error: release from main (currently on $BRANCH)" >&2
+    exit 1
 fi
 
-# 2. Calculate version from commit count
-COMMIT_COUNT=$(git rev-list --count HEAD)
+if ! git diff --quiet || ! git diff --cached --quiet || [ -n "$(git ls-files --others --exclude-standard)" ]; then
+    echo "error: uncommitted changes. Commit them first (e.g. git commit -m 'feat: ...')" >&2
+    exit 1
+fi
+
+# The bump commit adds one more commit, so count it in the version
+COMMIT_COUNT=$(( $(git rev-list --count HEAD) + 1 ))
 VERSION="1.0.${COMMIT_COUNT}"
 
-echo "==> Version: $VERSION (commits: $COMMIT_COUNT)"
+if git rev-parse "v${VERSION}" >/dev/null 2>&1; then
+    echo "error: tag v${VERSION} already exists" >&2
+    exit 1
+fi
 
-# 3. Update MARKETING_VERSION in pbxproj
+echo "==> Version: $VERSION"
+
 sed -i '' "s/MARKETING_VERSION = .*;/MARKETING_VERSION = ${VERSION};/g" LyricBar.xcodeproj/project.pbxproj
-
-# 4. Commit version bump
 git add LyricBar.xcodeproj/project.pbxproj
-git commit -m "chore: bump version to ${VERSION}" || true
+git commit -m "chore: bump version to ${VERSION}"
 
-# 5. Tag
-git tag -f "v${VERSION}"
+git tag "v${VERSION}"
 
-# 6. Push
 echo "==> Pushing to origin..."
-git push origin main --tags
+git push origin main
+git push origin "v${VERSION}"
 
 echo ""
 echo "==> Done: v${VERSION} released!"

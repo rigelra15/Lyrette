@@ -21,7 +21,8 @@ fi
 
 SPEC="${SCRIPT_DIR}/dmg-spec.json"
 RW_DMG="${SCRIPT_DIR}/LyricBar_rw.dmg"
-FINAL_DMG="${SCRIPT_DIR}/LyricBar 1.0.dmg"
+VERSION=$(grep -m1 MARKETING_VERSION "${SCRIPT_DIR}/LyricBar.xcodeproj/project.pbxproj" | sed -E 's/.*= ([^;]+);.*/\1/')
+FINAL_DMG="${SCRIPT_DIR}/LyricBar ${VERSION}.dmg"
 APPDMG="${HOME}/.nvm/versions/node/v22.22.2/lib/node_modules/create-dmg/node_modules/.bin/appdmg"
 
 echo "==> Building DMG with appdmg..."
