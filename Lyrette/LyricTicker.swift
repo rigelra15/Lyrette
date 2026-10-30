@@ -163,7 +163,7 @@ struct ArtworkSource {
         let fm = FileManager.default
         let base = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
         let dir = base
-            .appendingPathComponent("LyricBarCache", isDirectory: true)
+            .appendingPathComponent("LyretteCache", isDirectory: true)
             .appendingPathComponent("Artwork", isDirectory: true)
         if !fm.fileExists(atPath: dir.path) {
             try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
@@ -208,7 +208,7 @@ struct ArtworkSource {
             writeCache(imageData, for: key)
             return imageData
         } catch {
-            NSLog("LyricBar: artwork fetch error: \(error)")
+            NSLog("Lyrette: artwork fetch error: \(error)")
             return nil
         }
     }
@@ -333,7 +333,7 @@ nonisolated private func runAppleScript(_ source: String) -> String? {
         if let code = error[NSAppleScript.errorNumber] as? Int, code == -1743 {
             // Not authorized — silent, handled by caller cooldown
         } else {
-            NSLog("LyricBar: AppleScript error: \(error)")
+            NSLog("Lyrette: AppleScript error: \(error)")
         }
         return nil
     }
@@ -411,7 +411,7 @@ nonisolated func controlPlayback(app: AutomationTarget, action: String) {
     guard let appleScript = NSAppleScript(source: script) else { return }
     appleScript.executeAndReturnError(&error)
     if let error {
-        NSLog("LyricBar: playback control error: \(error)")
+        NSLog("Lyrette: playback control error: \(error)")
     }
 }
 
@@ -449,7 +449,7 @@ nonisolated func playPauseSpotify() {
     guard let appleScript = NSAppleScript(source: script) else { return }
     appleScript.executeAndReturnError(&error)
     if let error {
-        NSLog("LyricBar: playback control error: \(error)")
+        NSLog("Lyrette: playback control error: \(error)")
     }
 }
 
@@ -521,7 +521,7 @@ final class LyricTicker: ObservableObject {
     private lazy var cacheDir: URL = {
         let fm = FileManager.default
         let base = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask).first!
-        let dir = base.appendingPathComponent("LyricBarCache", isDirectory: true)
+        let dir = base.appendingPathComponent("LyretteCache", isDirectory: true)
         if !fm.fileExists(atPath: dir.path) {
             try? fm.createDirectory(at: dir, withIntermediateDirectories: true)
         }
@@ -529,7 +529,7 @@ final class LyricTicker: ObservableObject {
     }()
 
     // Published UI state
-    @Published var current: String = "LyricBar"       // current lyric line
+    @Published var current: String = "Lyrette"       // current lyric line
     @Published private(set) var currentLineID: UUID?
     @Published var isFetching: Bool = false          // whether we are fetching lyrics
     @Published var nowPlayingArtist: String = ""     // artist from source
@@ -803,7 +803,7 @@ final class LyricTicker: ObservableObject {
         idleTimer = Timer.scheduledTimer(withTimeInterval: 5.0, repeats: false) { [weak self] _ in
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                self.current = "LyricBar"
+                self.current = "Lyrette"
                 self.currentLineID = nil
                 self.currentLyricIndex = nil
                 self.nowPlayingArtist = ""
@@ -875,7 +875,7 @@ final class LyricTicker: ObservableObject {
             }
         } catch {
             guard !Task.isCancelled else { return }
-            NSLog("LyricBar: fetch error: \(error)")
+            NSLog("Lyrette: fetch error: \(error)")
             await MainActor.run {
                 guard self.currentSongKey == songKey else { return }
                 self.rawLRC = ""

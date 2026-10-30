@@ -1,11 +1,11 @@
 {
-  "title": "LyricBar",
+  "title": "Lyrette",
   "background": "dmg-background.png",
-  "icon": "LyricBar.xcarchive/Products/Applications/LyricBar.app/Contents/Resources/AppIcon.icns",
+  "icon": "Lyrette.xcarchive/Products/Applications/Lyrette.app/Contents/Resources/AppIcon.icns",
   "icon-size": 128,
   "window": { "size": { "width": 660, "height": 400 } },
   "contents": [
-    { "x": 180, "y": 170, "type": "file", "path": "LyricBar.xcarchive/Products/Applications/LyricBar.app" },
+    { "x": 180, "y": 170, "type": "file", "path": "Lyrette.xcarchive/Products/Applications/Lyrette.app" },
     { "x": 480, "y": 170, "type": "link", "path": "/Applications" }
   ]
 }

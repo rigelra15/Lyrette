@@ -396,7 +396,7 @@ nonisolated final class LyricsSource: Sendable {
                 if LyricsMatching.looksLikeLRC(lrc) { return LyricsResult(lrc: lrc, provider: provider.name) }
             } catch {
                 if Task.isCancelled { throw CancellationError() }
-                NSLog("LyricBar: \(provider.name) had no lyrics: \(error)")
+                NSLog("Lyrette: \(provider.name) had no lyrics: \(error)")
             }
         }
         throw LyricsSourceError.notFound

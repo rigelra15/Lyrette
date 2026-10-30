@@ -7,7 +7,7 @@ struct FullLyricsView: View {
     @ObservedObject var ticker: LyricTicker
     /// Set when shown inside the popover: adds a back button and uses a smaller layout.
     var onBack: (() -> Void)?
-    @State private var accent = lyricBarBlue
+    @State private var accent = lyretteBlue
 
     private var isEmbedded: Bool { onBack != nil }
     private var lineFont: Font { .system(size: isEmbedded ? 21 : 27, weight: .bold) }

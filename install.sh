@@ -1,17 +1,17 @@
 #!/bin/bash
-# LyricBar installer.
-#   curl -fsSL https://raw.githubusercontent.com/rigelra15/LyricBar/main/install.sh | bash
+# Lyrette installer.
+#   curl -fsSL https://raw.githubusercontent.com/rigelra15/Lyrette/main/install.sh | bash
 # Install a specific version:  ... | VERSION=1.0.23 bash
 set -euo pipefail
 
-REPO="rigelra15/LyricBar"
-APP_NAME="LyricBar.app"
+REPO="rigelra15/Lyrette"
+APP_NAME="Lyrette.app"
 DEST="${INSTALL_DIR:-/Applications}"
 
 say() { printf '\033[1;34m==>\033[0m %s\n' "$*"; }
 die() { printf '\033[1;31merror:\033[0m %s\n' "$*" >&2; exit 1; }
 
-[ "$(uname -s)" = "Darwin" ] || die "LyricBar only runs on macOS."
+[ "$(uname -s)" = "Darwin" ] || die "Lyrette only runs on macOS."
 
 if [ -n "${VERSION:-}" ]; then
     API="https://api.github.com/repos/${REPO}/releases/tags/v${VERSION#v}"
@@ -33,19 +33,22 @@ cleanup() {
 }
 trap cleanup EXIT
 
-say "Downloading LyricBar ${TAG}..."
-curl -fL --progress-bar "$DMG_URL" -o "$WORK/LyricBar.dmg"
+say "Downloading Lyrette ${TAG}..."
+curl -fL --progress-bar "$DMG_URL" -o "$WORK/Lyrette.dmg"
 
 say "Mounting disk image..."
 mkdir -p "$MOUNT"
-hdiutil attach "$WORK/LyricBar.dmg" -nobrowse -readonly -noautoopen -quiet -mountpoint "$MOUNT"
+hdiutil attach "$WORK/Lyrette.dmg" -nobrowse -readonly -noautoopen -quiet -mountpoint "$MOUNT"
 [ -d "$MOUNT/$APP_NAME" ] || die "$APP_NAME not found in the disk image."
 
-if pgrep -x LyricBar >/dev/null 2>&1; then
-    say "Quitting running LyricBar..."
-    osascript -e 'tell application "LyricBar" to quit' >/dev/null 2>&1 || pkill -x LyricBar || true
-    sleep 1
-fi
+# Lyrette used to be called LyricBar; quit either one before replacing it.
+for running in Lyrette LyricBar; do
+    if pgrep -x "$running" >/dev/null 2>&1; then
+        say "Quitting running $running..."
+        osascript -e "tell application \"$running\" to quit" >/dev/null 2>&1 || pkill -x "$running" || true
+        sleep 1
+    fi
+done
 
 SUDO=""
 if [ ! -w "$DEST" ]; then
@@ -58,9 +61,13 @@ $SUDO rm -rf "$DEST/$APP_NAME"
 $SUDO ditto "$MOUNT/$APP_NAME" "$DEST/$APP_NAME"
 # The app isn't notarized; clear the quarantine flag so Gatekeeper doesn't block it.
 $SUDO xattr -dr com.apple.quarantine "$DEST/$APP_NAME" 2>/dev/null || true
+if [ -d "$DEST/LyricBar.app" ]; then
+    say "Removing the old LyricBar.app (Lyrette replaces it)..."
+    $SUDO rm -rf "$DEST/LyricBar.app"
+fi
 
-say "Launching LyricBar..."
+say "Launching Lyrette..."
 open "$DEST/$APP_NAME"
 
-printf '\n\033[1;32m✓ LyricBar %s installed.\033[0m Play a song in Apple Music or Spotify.\n' "$TAG"
+printf '\n\033[1;32m✓ Lyrette %s installed.\033[0m Play a song in Apple Music or Spotify.\n' "$TAG"
 printf '  Uninstall any time:  curl -fsSL https://raw.githubusercontent.com/%s/main/uninstall.sh | bash\n' "$REPO"

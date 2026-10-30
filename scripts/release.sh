@@ -30,8 +30,8 @@ fi
 
 echo "==> Version: $VERSION"
 
-sed -i '' "s/MARKETING_VERSION = .*;/MARKETING_VERSION = ${VERSION};/g" LyricBar.xcodeproj/project.pbxproj
-git add LyricBar.xcodeproj/project.pbxproj
+sed -i '' "s/MARKETING_VERSION = .*;/MARKETING_VERSION = ${VERSION};/g" Lyrette.xcodeproj/project.pbxproj
+git add Lyrette.xcodeproj/project.pbxproj
 git commit -m "chore: bump version to ${VERSION}"
 
 git tag "v${VERSION}"
@@ -42,4 +42,4 @@ git push origin "v${VERSION}"
 
 echo ""
 echo "==> Done: v${VERSION} released!"
-echo "    Watch: https://github.com/rigelra15/LyricBar/actions"
+echo "    Watch: https://github.com/rigelra15/Lyrette/actions"

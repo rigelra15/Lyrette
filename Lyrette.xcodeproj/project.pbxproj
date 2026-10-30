@@ -7,13 +7,13 @@
 	objects = {
 
 /* Begin PBXFileReference section */
-		985993CE2FDBABEE005D2DB5 /* LyricBar.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LyricBar.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		985993CE2FDBABEE005D2DB5 /* Lyrette.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Lyrette.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		985993D02FDBABEE005D2DB5 /* LyricBar */ = {
+		985993D02FDBABEE005D2DB5 /* Lyrette */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
-			path = LyricBar;
+			path = Lyrette;
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
@@ -32,7 +32,7 @@
 		985993C52FDBABEE005D2DB5 = {
 			isa = PBXGroup;
 			children = (
-				985993D02FDBABEE005D2DB5 /* LyricBar */,
+				985993D02FDBABEE005D2DB5 /* Lyrette */,
 				985993CF2FDBABEE005D2DB5 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -40,7 +40,7 @@
 		985993CF2FDBABEE005D2DB5 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				985993CE2FDBABEE005D2DB5 /* LyricBar.app */,
+				985993CE2FDBABEE005D2DB5 /* Lyrette.app */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -48,9 +48,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		985993CD2FDBABEE005D2DB5 /* LyricBar */ = {
+		985993CD2FDBABEE005D2DB5 /* Lyrette */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 985993D92FDBABEF005D2DB5 /* Build configuration list for PBXNativeTarget "LyricBar" */;
+			buildConfigurationList = 985993D92FDBABEF005D2DB5 /* Build configuration list for PBXNativeTarget "Lyrette" */;
 			buildPhases = (
 				985993CA2FDBABEE005D2DB5 /* Sources */,
 				985993CB2FDBABEE005D2DB5 /* Frameworks */,
@@ -61,13 +61,13 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				985993D02FDBABEE005D2DB5 /* LyricBar */,
+				985993D02FDBABEE005D2DB5 /* Lyrette */,
 			);
-			name = LyricBar;
+			name = Lyrette;
 			packageProductDependencies = (
 			);
-			productName = LyricBar;
-			productReference = 985993CE2FDBABEE005D2DB5 /* LyricBar.app */;
+			productName = Lyrette;
+			productReference = 985993CE2FDBABEE005D2DB5 /* Lyrette.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -85,7 +85,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 985993C92FDBABEE005D2DB5 /* Build configuration list for PBXProject "LyricBar" */;
+			buildConfigurationList = 985993C92FDBABEE005D2DB5 /* Build configuration list for PBXProject "Lyrette" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -99,7 +99,7 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				985993CD2FDBABEE005D2DB5 /* LyricBar */,
+				985993CD2FDBABEE005D2DB5 /* Lyrette */,
 			);
 		};
 /* End PBXProject section */
@@ -248,7 +248,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = LyricBar/LyricBar.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Lyrette/Lyrette.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -257,7 +257,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-			INFOPLIST_KEY_NSAppleEventsUsageDescription = "LyricBar needs access to control Music/Spotify to read the current song for synchronized lyrics.";
+			INFOPLIST_KEY_NSAppleEventsUsageDescription = "Lyrette needs access to control Music/Spotify to read the current song for synchronized lyrics.";
 			INFOPLIST_KEY_NSHumanReadableCopyright = "";
 			INFOPLIST_KEY_LSUIElement = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -265,7 +265,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0.39;
-				PRODUCT_BUNDLE_IDENTIFIER = com.rigelra.LyricBar;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rigelra.Lyrette;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -282,7 +282,7 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
-				CODE_SIGN_ENTITLEMENTS = LyricBar/LyricBar.entitlements;
+				CODE_SIGN_ENTITLEMENTS = Lyrette/Lyrette.entitlements;
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
@@ -291,7 +291,7 @@
 				ENABLE_PREVIEWS = YES;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
-			INFOPLIST_KEY_NSAppleEventsUsageDescription = "LyricBar needs access to control Music/Spotify to read the current song for synchronized lyrics.";
+			INFOPLIST_KEY_NSAppleEventsUsageDescription = "Lyrette needs access to control Music/Spotify to read the current song for synchronized lyrics.";
 			INFOPLIST_KEY_NSHumanReadableCopyright = "";
 			INFOPLIST_KEY_LSUIElement = YES;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -299,7 +299,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0.39;
-				PRODUCT_BUNDLE_IDENTIFIER = com.rigelra.LyricBar;
+				PRODUCT_BUNDLE_IDENTIFIER = com.rigelra.Lyrette;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
 				STRING_CATALOG_GENERATE_SYMBOLS = YES;
@@ -314,7 +314,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		985993C92FDBABEE005D2DB5 /* Build configuration list for PBXProject "LyricBar" */ = {
+		985993C92FDBABEE005D2DB5 /* Build configuration list for PBXProject "Lyrette" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				985993D72FDBABEF005D2DB5 /* Debug */,
@@ -323,7 +323,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		985993D92FDBABEF005D2DB5 /* Build configuration list for PBXNativeTarget "LyricBar" */ = {
+		985993D92FDBABEF005D2DB5 /* Build configuration list for PBXNativeTarget "Lyrette" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				985993DA2FDBABEF005D2DB5 /* Debug */,

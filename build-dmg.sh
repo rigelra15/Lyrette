@@ -6,23 +6,23 @@ SAVED_DIR="$(pwd)"
 cd "$SCRIPT_DIR"
 
 # Build .app first if not provided
-APP_PATH="${1:-LyricBar.xcarchive/Products/Applications/LyricBar.app}"
+APP_PATH="${1:-Lyrette.xcarchive/Products/Applications/Lyrette.app}"
 if [ ! -d "$APP_PATH" ]; then
     echo "==> Building .app..."
     xcodebuild archive \
-        -project LyricBar.xcodeproj \
-        -scheme LyricBar \
+        -project Lyrette.xcodeproj \
+        -scheme Lyrette \
         -configuration Release \
-        -archivePath LyricBar.xcarchive \
+        -archivePath Lyrette.xcarchive \
         CODE_SIGN_IDENTITY="-" \
         CODE_SIGNING_REQUIRED=NO \
         CODE_SIGNING_ALLOWED=NO
 fi
 
 SPEC="${SCRIPT_DIR}/dmg-spec.json"
-RW_DMG="${SCRIPT_DIR}/LyricBar_rw.dmg"
-VERSION=$(grep -m1 MARKETING_VERSION "${SCRIPT_DIR}/LyricBar.xcodeproj/project.pbxproj" | sed -E 's/.*= ([^;]+);.*/\1/')
-FINAL_DMG="${SCRIPT_DIR}/LyricBar ${VERSION}.dmg"
+RW_DMG="${SCRIPT_DIR}/Lyrette_rw.dmg"
+VERSION=$(grep -m1 MARKETING_VERSION "${SCRIPT_DIR}/Lyrette.xcodeproj/project.pbxproj" | sed -E 's/.*= ([^;]+);.*/\1/')
+FINAL_DMG="${SCRIPT_DIR}/Lyrette ${VERSION}.dmg"
 APPDMG="${HOME}/.nvm/versions/node/v22.22.2/lib/node_modules/create-dmg/node_modules/.bin/appdmg"
 
 echo "==> Building DMG with appdmg..."
@@ -33,12 +33,12 @@ hdiutil convert "$FINAL_DMG" -format UDRW -o "$RW_DMG"
 
 echo "==> Mounting read-write..."
 DEV=$(hdiutil attach "$RW_DMG" -readwrite -noverify -noautoopen | egrep '^/dev/' | sed 1q | awk '{print $1}')
-MOUNT="/Volumes/LyricBar"
+MOUNT="/Volumes/Lyrette"
 
 echo "==> Applying custom layout..."
 osascript <<'APPLESCRIPT'
 tell application "Finder"
-    tell disk "LyricBar"
+    tell disk "Lyrette"
         open
         set current view of container window to icon view
         set toolbar visible of container window to false
@@ -48,7 +48,7 @@ tell application "Finder"
         set arrangement of viewOptions to not arranged
         set icon size of viewOptions to 160
         set background picture of viewOptions to file ".background:dmg-background.png"
-        set position of item "LyricBar.app" of container window to {180, 170}
+        set position of item "Lyrette.app" of container window to {180, 170}
         set position of item "Applications" of container window to {480, 170}
         close
         open

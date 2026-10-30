@@ -6,7 +6,7 @@ import ServiceManagement
 final class UpdateChecker {
     static let shared = UpdateChecker()
 
-    private static let latestReleaseURL = URL(string: "https://api.github.com/repos/rigelra15/LyricBar/releases/latest")!
+    private static let latestReleaseURL = URL(string: "https://api.github.com/repos/rigelra15/Lyrette/releases/latest")!
     private static let skippedVersionKey = "skippedUpdateVersion"
 
     private struct Release: Decodable {
@@ -98,7 +98,7 @@ final class UpdateChecker {
 
     private func present(_ release: Release) {
         let alert = NSAlert()
-        alert.messageText = "LyricBar \(release.version) is available"
+        alert.messageText = "Lyrette \(release.version) is available"
         alert.informativeText = "You have version \(currentVersion). Here's what's new:"
         alert.icon = NSApp.applicationIconImage
         alert.accessoryView = Self.changelogView(release.body)
@@ -149,7 +149,7 @@ final class UpdateChecker {
     private func showUpToDate() {
         let alert = NSAlert()
         alert.messageText = "You're up to date"
-        alert.informativeText = "LyricBar \(currentVersion) is the latest version."
+        alert.informativeText = "Lyrette \(currentVersion) is the latest version."
         NSApp.activate(ignoringOtherApps: true)
         alert.runModal()
     }
@@ -188,7 +188,7 @@ final class UpdateChecker {
         let bundleURL = Bundle.main.bundleURL
         guard FileManager.default.isWritableFile(atPath: bundleURL.deletingLastPathComponent().path) else {
             isInstalling = false
-            showInstallFailed("LyricBar can't replace itself in its current folder.", releasePage: fallback)
+            showInstallFailed("Lyrette can't replace itself in its current folder.", releasePage: fallback)
             return
         }
 
@@ -225,10 +225,10 @@ final class UpdateChecker {
             backing: .buffered,
             defer: false
         )
-        window.title = "LyricBar Update"
+        window.title = "Lyrette Update"
         window.isReleasedWhenClosed = false
 
-        let label = NSTextField(labelWithString: "Downloading update…\nLyricBar will restart when it's done.")
+        let label = NSTextField(labelWithString: "Downloading update…\nLyrette will restart when it's done.")
         label.alignment = .center
         label.frame = NSRect(x: 20, y: 40, width: 260, height: 36)
         let spinner = NSProgressIndicator(frame: NSRect(x: 20, y: 16, width: 260, height: 12))
@@ -253,7 +253,7 @@ final class UpdateChecker {
     /// Downloads the DMG, copies the app out of it, and unmounts. Returns the staged app.
     private nonisolated static func downloadAndStage(_ dmgURL: URL) async throws -> URL {
         let fm = FileManager.default
-        let workDir = fm.temporaryDirectory.appendingPathComponent("LyricBarUpdate-\(UUID().uuidString)")
+        let workDir = fm.temporaryDirectory.appendingPathComponent("LyretteUpdate-\(UUID().uuidString)")
         try fm.createDirectory(at: workDir, withIntermediateDirectories: true)
 
         let (tmpFile, response) = try await URLSession.shared.download(from: dmgURL)

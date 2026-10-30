@@ -1,6 +1,6 @@
 Add the following to your target's Info.plist:
 
-- NSAppleEventsUsageDescription (String): "LyricBar needs access to control Music/Spotify to read the current song for synchronized lyrics."
+- NSAppleEventsUsageDescription (String): "Lyrette needs access to control Music/Spotify to read the current song for synchronized lyrics."
 
 If your app is sandboxed and you fetch from the internet (LRCLIB), ensure:
 - com.apple.security.network.client = YES (Outgoing Connections (Client))

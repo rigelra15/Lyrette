@@ -30,10 +30,10 @@ jobs:
           VERSION=${GITHUB_REF#refs/tags/v}
           echo "Building version $VERSION"
           xcodebuild archive \
-            -project LyricBar.xcodeproj \
-            -scheme LyricBar \
+            -project Lyrette.xcodeproj \
+            -scheme Lyrette \
             -configuration Release \
-            -archivePath LyricBar.xcarchive \
+            -archivePath Lyrette.xcarchive \
             MARKETING_VERSION="$VERSION" \
             CODE_SIGN_IDENTITY="-" \
             CODE_SIGNING_REQUIRED=NO \
@@ -46,19 +46,19 @@ jobs:
           BUILD_SPEC=dmg-spec.json
 
           # Build initial DMG with appdmg
-          "$APPDMG" "$BUILD_SPEC" "LyricBar_temp.dmg"
+          "$APPDMG" "$BUILD_SPEC" "Lyrette_temp.dmg"
 
           # Convert to read-write for DS_Store modification
-          hdiutil convert LyricBar_temp.dmg -format UDRW -o LyricBar_rw.dmg
-          rm -f LyricBar_temp.dmg
+          hdiutil convert Lyrette_temp.dmg -format UDRW -o Lyrette_rw.dmg
+          rm -f Lyrette_temp.dmg
 
           # Mount read-write
-          DEV=$(hdiutil attach LyricBar_rw.dmg -readwrite -noverify -noautoopen | egrep '^/dev/' | sed 1q | awk '{print $1}')
+          DEV=$(hdiutil attach Lyrette_rw.dmg -readwrite -noverify -noautoopen | egrep '^/dev/' | sed 1q | awk '{print $1}')
 
           # Apply custom layout (icon positions, background, size)
           osascript <<'APPLESCRIPT'
           tell application "Finder"
-            tell disk "LyricBar"
+            tell disk "Lyrette"
               open
               set current view of container window to icon view
               set toolbar visible of container window to false
@@ -68,7 +68,7 @@ jobs:
               set arrangement of viewOptions to not arranged
               set icon size of viewOptions to 160
               set background picture of viewOptions to file ".background:dmg-background.png"
-              set position of item "LyricBar.app" of container window to {180, 170}
+              set position of item "Lyrette.app" of container window to {180, 170}
               set position of item "Applications" of container window to {480, 170}
               close
               open
@@ -80,18 +80,18 @@ jobs:
           APPLESCRIPT
 
           # Set volume icon
-          ICON_SRC="LyricBar.xcarchive/Products/Applications/LyricBar.app/Contents/Resources/AppIcon.icns"
+          ICON_SRC="Lyrette.xcarchive/Products/Applications/Lyrette.app/Contents/Resources/AppIcon.icns"
           if [ -f "$ICON_SRC" ]; then
-              cp "$ICON_SRC" "/Volumes/LyricBar/.VolumeIcon.icns"
-              SetFile -a C "/Volumes/LyricBar"
+              cp "$ICON_SRC" "/Volumes/Lyrette/.VolumeIcon.icns"
+              SetFile -a C "/Volumes/Lyrette"
           fi
 
           sync
           hdiutil detach "$DEV" -force
 
           # Convert back to compressed read-only
-          hdiutil convert LyricBar_rw.dmg -format UDZO -imagekey zlib-level=9 -o "LyricBar ${VERSION}.dmg"
-          rm -f LyricBar_rw.dmg LyricBar_temp.dmg
+          hdiutil convert Lyrette_rw.dmg -format UDZO -imagekey zlib-level=9 -o "Lyrette ${VERSION}.dmg"
+          rm -f Lyrette_rw.dmg Lyrette_temp.dmg
 
       - name: Generate Release Notes
         run: |
@@ -117,7 +117,7 @@ jobs:
         uses: softprops/action-gh-release@v2
         with:
           body_path: release_notes.md
-          files: LyricBar*.dmg
+          files: Lyrette*.dmg
           draft: false
           prerelease: false
           make_latest: true
@@ -127,12 +127,12 @@ jobs:
       - name: Update Homebrew cask
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
-          SHA=$(shasum -a 256 "LyricBar ${VERSION}.dmg" | awk '{print $1}')
+          SHA=$(shasum -a 256 "Lyrette ${VERSION}.dmg" | awk '{print $1}')
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git fetch origin main
           git checkout -B main origin/main
-          sed -i '' -E "s/^  version \".*\"/  version \"${VERSION}\"/; s/^  sha256 \".*\"/  sha256 \"${SHA}\"/" Casks/lyricbar.rb
-          git add Casks/lyricbar.rb
+          sed -i '' -E "s/^  version \".*\"/  version \"${VERSION}\"/; s/^  sha256 \".*\"/  sha256 \"${SHA}\"/" Casks/lyrette.rb
+          git add Casks/lyrette.rb
           git commit -m "chore: update cask to ${VERSION}" || exit 0
           git push origin main

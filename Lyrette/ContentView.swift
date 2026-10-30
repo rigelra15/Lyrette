@@ -2,7 +2,7 @@ import SwiftUI
 import AppKit
 import ServiceManagement
 
-let lyricBarBlue = Color(red: 0, green: 129.0 / 255.0, blue: 251.0 / 255.0)
+let lyretteBlue = Color(red: 0, green: 129.0 / 255.0, blue: 251.0 / 255.0)
 
 func dominantColor(from data: Data?) -> Color {
     let accent = ArtworkAccent.dominantRGB(from: data)
@@ -10,11 +10,11 @@ func dominantColor(from data: Data?) -> Color {
 }
 
 /// The popover never resizes: the status item anchors to it, so any size change would make it jump.
-enum LyricBarPopoverMetrics {
+enum LyrettePopoverMetrics {
     static let size = CGSize(width: 360, height: 520)
 }
 
-struct LyricBarMenuBarLabel: View {
+struct LyretteMenuBarLabel: View {
     @ObservedObject var ticker: LyricTicker
 
     var body: some View {
@@ -27,9 +27,9 @@ struct LyricBarMenuBarLabel: View {
     }
 }
 
-struct LyricBarMenuView: View {
+struct LyretteMenuView: View {
     @ObservedObject var ticker: LyricTicker
-    @State private var accentColor = lyricBarBlue
+    @State private var accentColor = lyretteBlue
     @State private var showingFullLyrics = false
 
     var body: some View {
@@ -44,7 +44,7 @@ struct LyricBarMenuView: View {
                     .transition(.move(edge: .leading).combined(with: .opacity))
             }
         }
-        .frame(width: LyricBarPopoverMetrics.size.width, height: LyricBarPopoverMetrics.size.height)
+        .frame(width: LyrettePopoverMetrics.size.width, height: LyrettePopoverMetrics.size.height)
         .clipped()
         .background(.regularMaterial)
         .onAppear {
@@ -150,7 +150,7 @@ struct LyricBarMenuView: View {
         if ticker.isFetching {
             return "Finding synchronized lyrics…"
         }
-        if !ticker.current.isEmpty, ticker.current != "LyricBar" {
+        if !ticker.current.isEmpty, ticker.current != "Lyrette" {
             return ticker.current
         }
         return ticker.hasNowPlaying ? "Lyrics will appear here" : "Play a song to see synced lyrics"
@@ -252,12 +252,12 @@ struct LyricBarMenuView: View {
                         UpdateChecker.shared.checkNow()
                     }
                 }
-                FooterIconButton(systemName: "info.circle", help: "About LyricBar") {
+                FooterIconButton(systemName: "info.circle", help: "About Lyrette") {
                     DispatchQueue.main.async {
-                        LyricBarWindows.shared.showAbout()
+                        LyretteWindows.shared.showAbout()
                     }
                 }
-                FooterIconButton(systemName: "power", help: "Quit LyricBar") {
+                FooterIconButton(systemName: "power", help: "Quit Lyrette") {
                     NSApp.terminate(nil)
                 }
             }
@@ -278,7 +278,7 @@ struct AlbumArtworkView: View {
             RoundedRectangle(cornerRadius: size * 0.18, style: .continuous)
                 .fill(
                     LinearGradient(
-                        colors: [lyricBarBlue.opacity(0.9), lyricBarBlue.opacity(0.75)],
+                        colors: [lyretteBlue.opacity(0.9), lyretteBlue.opacity(0.75)],
                         startPoint: .topLeading,
                         endPoint: .bottomTrailing
                     )
@@ -314,7 +314,7 @@ struct AlbumArtworkView: View {
     }
 }
 
-/// One player in the access list: its real app icon, name, and whether LyricBar may read it.
+/// One player in the access list: its real app icon, name, and whether Lyrette may read it.
 private struct PlayerAccessRow: View {
     let name: String
     let bundleID: String
@@ -366,7 +366,7 @@ private struct PlayerAccessRow: View {
             Button("Allow Access", action: requestAccess)
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
-                .help("Let LyricBar read what \(name) is playing")
+                .help("Let Lyrette read what \(name) is playing")
         }
     }
 }
@@ -409,7 +409,7 @@ private struct LaunchAtLoginRow: View {
                 }
             } catch {
                 isEnabled = !enabled
-                NSLog("LyricBar: launch at login failed: \(error)")
+                NSLog("Lyrette: launch at login failed: \(error)")
             }
         }
     }
@@ -417,5 +417,5 @@ private struct LaunchAtLoginRow: View {
 
 #Preview {
     let ticker = LyricTicker()
-    LyricBarMenuView(ticker: ticker)
+    LyretteMenuView(ticker: ticker)
 }

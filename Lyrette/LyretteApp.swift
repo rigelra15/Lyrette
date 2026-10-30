@@ -3,14 +3,15 @@ import AppKit
 import Combine
 
 @main
-struct LyricBarApp: App {
+struct LyretteApp: App {
     @StateObject private var ticker: LyricTicker
-    @StateObject private var statusItem: LyricBarStatusItem
+    @StateObject private var statusItem: LyretteStatusItem
 
     init() {
+        LegacyMigration.runIfNeeded()
         let ticker = LyricTicker()
         _ticker = StateObject(wrappedValue: ticker)
-        _statusItem = StateObject(wrappedValue: LyricBarStatusItem(ticker: ticker))
+        _statusItem = StateObject(wrappedValue: LyretteStatusItem(ticker: ticker))
 
         DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
             ticker.checkSpotifyAutomationAccess()
@@ -46,7 +47,7 @@ private final class RoundedArtworkView: NSImageView {
 }
 
 @MainActor
-private final class LyricBarStatusItemView: NSView {
+private final class LyretteStatusItemView: NSView {
     static let font = NSFont.systemFont(ofSize: 13, weight: .medium)
     static let artworkInset: CGFloat = 4
     static let artworkSize: CGFloat = 18
@@ -103,7 +104,7 @@ private final class LyricBarStatusItemView: NSView {
         artworkView.layer?.masksToBounds = true
         addSubview(artworkView)
 
-        toolTip = "LyricBar"
+        toolTip = "Lyrette"
     }
 
     required init?(coder: NSCoder) {
@@ -226,10 +227,10 @@ private final class LyricBarStatusItemView: NSView {
 }
 
 @MainActor
-final class LyricBarStatusItem: NSObject, ObservableObject, NSPopoverDelegate {
+final class LyretteStatusItem: NSObject, ObservableObject, NSPopoverDelegate {
     private let ticker: LyricTicker
     private let statusItem: NSStatusItem
-    private let statusView = LyricBarStatusItemView()
+    private let statusView = LyretteStatusItemView()
     private let popover = NSPopover()
     private var observation: AnyCancellable?
     private var lastTitle = ""
@@ -259,7 +260,7 @@ final class LyricBarStatusItem: NSObject, ObservableObject, NSPopoverDelegate {
 
     private func configurePopover() {
         let hosting = NSHostingController(
-            rootView: LyricBarMenuView(ticker: ticker)
+            rootView: LyretteMenuView(ticker: ticker)
         )
         // Without this the hosting controller resizes the popover whenever content changes,
         // which shifts it away from the status item.
@@ -271,8 +272,8 @@ final class LyricBarStatusItem: NSObject, ObservableObject, NSPopoverDelegate {
     }
 
     private static let popoverSize = NSSize(
-        width: LyricBarPopoverMetrics.size.width,
-        height: LyricBarPopoverMetrics.size.height
+        width: LyrettePopoverMetrics.size.width,
+        height: LyrettePopoverMetrics.size.height
     )
 
     private func updateStatusItem() {
@@ -294,9 +295,9 @@ final class LyricBarStatusItem: NSObject, ObservableObject, NSPopoverDelegate {
     /// up when the popover closes.
     private func applyStatusWidth() {
         guard !popover.isShown else { return }
-        let raw = LyricBarStatusItemView.textOrigin
-            + LyricBarStatusItemView.textWidth(lastTitle) + LyricBarStatusItemView.cellPadding
-            + LyricBarStatusItemView.trailingInset
+        let raw = LyretteStatusItemView.textOrigin
+            + LyretteStatusItemView.textWidth(lastTitle) + LyretteStatusItemView.cellPadding
+            + LyretteStatusItemView.trailingInset
         // Rounded up so small changes don't nudge the whole menu bar on every lyric line.
         let width = min(max(ceil(raw / 16) * 16, Self.minStatusWidth), Self.maxStatusWidth)
         setStatusWidth(width)
@@ -344,8 +345,8 @@ final class LyricBarStatusItem: NSObject, ObservableObject, NSPopoverDelegate {
 }
 
 // MARK: - Window Manager
-final class LyricBarWindows: NSObject, NSWindowDelegate {
-    static let shared = LyricBarWindows()
+final class LyretteWindows: NSObject, NSWindowDelegate {
+    static let shared = LyretteWindows()
 
     private var aboutWindow: NSWindow?
 
@@ -358,7 +359,7 @@ final class LyricBarWindows: NSObject, NSWindowDelegate {
 
         let aboutVC = AboutViewController()
         let win = NSWindow(contentViewController: aboutVC)
-        win.title = "About LyricBar"
+        win.title = "About Lyrette"
         win.styleMask = [.titled, .closable]
         win.delegate = self
         win.isReleasedWhenClosed = false
@@ -389,7 +390,7 @@ final class AboutViewController: NSViewController {
         icon.frame = NSRect(x: 90, y: 152, width: 80, height: 80)
         contentView.addSubview(icon)
 
-        let title = NSTextField(labelWithString: "LyricBar")
+        let title = NSTextField(labelWithString: "Lyrette")
         title.font = NSFont.systemFont(ofSize: 18, weight: .bold)
         title.alignment = .center
         title.frame = NSRect(x: 0, y: 118, width: 260, height: 24)
