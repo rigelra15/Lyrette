@@ -242,7 +242,9 @@ final class LyretteStatusItem: NSObject, ObservableObject, NSPopoverDelegate {
         super.init()
 
         statusView.frame = NSRect(x: 0, y: 0, width: 280, height: 22)
-        statusView.autoresizingMask = []
+        // Follow the status item's real size instead of setting the frame by hand: the menu bar
+        // applies length changes on its own schedule, and a hand-set frame could drift from it.
+        statusView.autoresizingMask = [.width, .height]
         statusItem.view = statusView
         statusView.action = { [weak self] in
             self?.togglePopover()
@@ -304,9 +306,8 @@ final class LyretteStatusItem: NSObject, ObservableObject, NSPopoverDelegate {
     }
 
     private func setStatusWidth(_ width: CGFloat) {
-        guard width != statusView.preferredWidth else { return }
+        guard width != statusItem.length else { return }
         statusView.preferredWidth = width
-        statusView.setFrameSize(NSSize(width: width, height: 22))
         statusItem.length = width
     }
 
