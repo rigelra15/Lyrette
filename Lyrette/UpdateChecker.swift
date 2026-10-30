@@ -122,16 +122,7 @@ final class UpdateChecker {
     }
 
     private static func changelogView(_ body: String?) -> NSView {
-        let text = (body ?? "No changelog provided.").trimmingCharacters(in: .whitespacesAndNewlines)
-        let attributed = (try? NSMutableAttributedString(
-            markdown: text,
-            options: .init(interpretedSyntax: .inlineOnlyPreservingWhitespace)
-        )) ?? NSMutableAttributedString(string: text)
-        let range = NSRange(location: 0, length: attributed.length)
-        attributed.addAttributes([
-            .font: NSFont.systemFont(ofSize: 12),
-            .foregroundColor: NSColor.labelColor
-        ], range: range)
+        let attributed = formattedChangelog(body ?? "")
 
         let scroll = NSScrollView(frame: NSRect(x: 0, y: 0, width: 380, height: 170))
         scroll.hasVerticalScroller = true
@@ -144,6 +135,60 @@ final class UpdateChecker {
         textView.textStorage?.setAttributedString(attributed)
         scroll.documentView = textView
         return scroll
+    }
+
+    /// Release notes are generated from commit subjects ("## v1.0.59", "### Changes since…",
+    /// "- feat: …"). Show them as a readable list grouped into New / Fixed / Improved, and leave
+    /// out housekeeping commits (docs, chore, build, ci, test) that mean nothing to users.
+    static func formattedChangelog(_ body: String) -> NSAttributedString {
+        let sections: [(key: String, title: String)] = [("feat", "New"), ("fix", "Fixed"), ("other", "Improved")]
+        let hidden: Set<String> = ["docs", "chore", "build", "ci", "test", "style"]
+        var items: [String: [String]] = [:]
+
+        for rawLine in body.components(separatedBy: .newlines) {
+            let line = rawLine.trimmingCharacters(in: .whitespaces)
+            guard line.hasPrefix("- ") || line.hasPrefix("* ") else { continue }
+            var text = String(line.dropFirst(2)).trimmingCharacters(in: .whitespaces)
+
+            var kind = "other"
+            if let match = text.range(of: #"^([a-z]+)(\([^)]*\))?!?:\s*"#, options: .regularExpression) {
+                let type = String(text[match].prefix { $0.isLetter })
+                if hidden.contains(type) { continue }
+                kind = type == "feat" || type == "fix" ? type : "other"
+                text = String(text[match.upperBound...])
+            }
+            guard !text.isEmpty else { continue }
+            items[kind, default: []].append(text.prefix(1).uppercased() + text.dropFirst())
+        }
+
+        let result = NSMutableAttributedString()
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.headIndent = 12
+        paragraph.paragraphSpacing = 3
+
+        for section in sections {
+            guard let lines = items[section.key], !lines.isEmpty else { continue }
+            if result.length > 0 { result.append(NSAttributedString(string: "\n")) }
+            result.append(NSAttributedString(string: section.title + "\n", attributes: [
+                .font: NSFont.systemFont(ofSize: 12, weight: .semibold),
+                .foregroundColor: NSColor.labelColor
+            ]))
+            for line in lines {
+                result.append(NSAttributedString(string: "•  " + line + "\n", attributes: [
+                    .font: NSFont.systemFont(ofSize: 12),
+                    .foregroundColor: NSColor.secondaryLabelColor,
+                    .paragraphStyle: paragraph
+                ]))
+            }
+        }
+
+        if result.length == 0 {
+            result.append(NSAttributedString(string: "Bug fixes and improvements.", attributes: [
+                .font: NSFont.systemFont(ofSize: 12),
+                .foregroundColor: NSColor.secondaryLabelColor
+            ]))
+        }
+        return result
     }
 
     private func showUpToDate() {
