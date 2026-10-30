@@ -1,6 +1,6 @@
 cask "lyrette" do
-  version "1.0.52"
-  sha256 "e43eb802528b239815e3f3488b66cf4688510509cb83c20c3798a6ac4a68e0a8"
+  version "1.0.59"
+  sha256 "6b6f9cc8843cfa741369bd3b3d16c8944695d7f77d2d415e34a7b7e6a51e22f9"
 
   url "https://github.com/rigelra15/Lyrette/releases/download/v#{version}/Lyrette.#{version}.dmg"
   name "Lyrette"
