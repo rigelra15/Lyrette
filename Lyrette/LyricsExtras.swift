@@ -216,6 +216,18 @@ enum LyricsTranslator {
         return Locale.Language(identifier: dominant.rawValue)
     }
 
+    private static let variants: [String: [String]] = [
+        "en": ["en-US", "en-GB"],
+        "pt": ["pt-BR", "pt-PT"],
+        "es": ["es-ES", "es-MX"],
+        "zh": ["zh-Hans", "zh-Hant"],
+    ]
+
+    private static func regionalVariants(of language: Locale.Language) -> [Locale.Language] {
+        let code = language.languageCode?.identifier ?? ""
+        return [language] + (variants[code] ?? []).map(Locale.Language.init(identifier:))
+    }
+
     enum Outcome {
         case translated([String])
         case needsDownload(source: Locale.Language)
@@ -231,15 +243,24 @@ enum LyricsTranslator {
             return .sameLanguage
         }
 
-        switch await LanguageAvailability().status(from: source, to: target) {
-        case .unsupported:
-            return .unsupported
-        case .supported:
-            return .needsDownload(source: source)
-        case .installed:
-            break
-        @unknown default:
-            return .unsupported
+        // Models are regional (English UK vs US); a generic "en" counts as missing even when one
+        // variant is installed, so look for an installed variant before asking for a download.
+        let availability = LanguageAvailability()
+        var installedSource: Locale.Language?
+        var anySupported = false
+        for candidate in regionalVariants(of: source) {
+            switch await availability.status(from: candidate, to: target) {
+            case .installed:
+                installedSource = candidate
+            case .supported:
+                anySupported = true
+            default:
+                break
+            }
+            if installedSource != nil { break }
+        }
+        guard let source = installedSource else {
+            return anySupported ? .needsDownload(source: source) : .unsupported
         }
 
         let session = TranslationSession(installedSource: source, target: target)
