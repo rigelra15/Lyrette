@@ -8,9 +8,19 @@
   <a href="LICENSE"><img src="docs/badge-license.svg" alt="MIT license"></a>
 </p>
 
-**Lyrette** is a lightweight macOS menu bar app that shows **synchronized lyrics** for whatever is playing in Apple Music or Spotify — the current line, with the album cover, always one glance away.
+# Lyrette — synced lyrics in your Mac menu bar
 
-> **Formerly LyricBar.** If you have LyricBar installed, just accept its next update: it installs Lyrette in its place and keeps your timing offsets, lyrics source, cache and Launch at Login. macOS will ask once more for Music/Spotify access, since Lyrette is a new app to it. Homebrew users get the same with `brew update && brew upgrade --cask lyricbar` (on Homebrew 7+, run `brew trust rigelra15/lyricbar` first if brew refuses to load the renamed cask).
+Follow the current lyric line without switching away from what you're doing. **Lyrette** displays lyrics synced to playback in your Mac's menu bar, with automatic detection of **Apple Music and Spotify**.
+
+Sing along with Japanese romaji, Chinese pinyin, and Korean romanization, or open the full lyrics window for auto-scrolling lyrics and optional on-device translation. Click the menu bar item for playback controls and a spinning vinyl player featuring the album artwork.
+
+**Free and open source · macOS 26.5+ · Apple Silicon and Intel · No account or API key required**
+
+[**Download the latest release**](https://github.com/rigelra15/Lyrette/releases/latest) · [Installation options](#install) · [First-launch setup](#first-launch)
+
+Lyrette fetches lyrics from LRCLIB, NetEase, and BetterLyrics, then caches them locally. Lyrics availability depends on the song and source. Translation may require an initial language download.
+
+**Upgrading from LyricBar?** See [Update](#update) for migration instructions.
 
 ## Features
 
@@ -114,6 +124,8 @@ open Lyrette.xcodeproj   # then press ⌘R
 3. Play a song. Lyrics start syncing in the menu bar.
 
 ## Update
+
+> **Formerly LyricBar.** If you have LyricBar installed, just accept its next update: it installs Lyrette in its place and keeps your timing offsets, lyrics source, cache and Launch at Login. macOS will ask once more for Music/Spotify access, since Lyrette is a new app to it. Homebrew users get the same with `brew update && brew upgrade --cask lyricbar` (on Homebrew 7+, run `brew trust rigelra15/lyricbar` first if brew refuses to load the renamed cask).
 
 Lyrette checks GitHub for a new version every time it starts (including at login). When one is found you get the changelog and an **Update Now** button that downloads, installs and relaunches the app. You can also check manually with the ⬇︎ button in the popover.
 
